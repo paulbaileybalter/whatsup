@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balter Brewing — Daily 9am Meeting</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxNjEgMTYxIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMzAuMi4xLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjEgQnVpbGQgMSkgIC0tPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuc3QwIHsKICAgICAgICBmaWxsOiAjNmNjNWE1OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMTM2LjMsNzAuNGwtOS40LTkuNGMtMS42LTEuNi00LjMtMS42LTYsMC0xLjYsMS42LTEuNiw0LjMsMCw2bDIuMywyLjNjLTkuNiwxMy4yLTI1LjIsMjEuNy00Mi43LDIxLjdzLTMzLjEtOC42LTQyLjctMjEuOGwyLjMtMi4zYzEuNi0xLjYsMS42LTQuMywwLTYtMS42LTEuNi00LjMtMS42LTYsMGwtOS40LDkuNGMtMS42LDEuNi0xLjYsNC4zLDAsNiwuOC44LDEuOSwxLjIsMywxLjJzMi4yLS40LDMtMS4ybDEuMS0xLjFjMTEuMiwxNC43LDI4LjksMjQuMiw0OC43LDI0LjJzMzcuNS05LjUsNDguNy0yNC4ybDEuMSwxLjFjLjguOCwxLjksMS4yLDMsMS4yczIuMi0uNCwzLTEuMmMxLjYtMS42LDEuNi00LjMsMC02Ii8+CiAgPHBhdGggY2xhc3M9InN0MCIgZD0iTTE1Mi41LDguNXYxNDRIOC41VjguNWgxNDRNMTYxLDBIMHYxNjFoMTYxVjBoMFoiLz4KPC9zdmc+">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app"></div>
+<style>
+  #app, #app * { box-sizing: border-box; }
+  #app {
+    --mint: #47D7AC; --mint-ink: #0d6a4d; --apricot: #FDAA63; --purple: #7566A0;
+    --sky: #99D6EA; --gold: #FFD637; --pale: #F1EB9C; --indigo: #8C93D8;
+    --leaf: #8BC48A; --coral: #F2937D; --violet: #B295D1; --slate: #6C7A89;
+    --red: #e56659; --red-10: #fdeceb;
+
+    --safety: var(--mint); --qc: var(--purple); --brew: var(--sky); --packaging: var(--apricot);
+    --maintenance: var(--gold); --logistics: var(--indigo); --engineering: var(--leaf);
+    --customer: var(--coral); --planning: var(--violet); --people: var(--slate); --wins: var(--pale);
+
+    --ink: #14161a; --ink-soft: #55585F; --muted: #9a9da3; --paper: #FBFBF9; --canvas: #ffffff;
+    --line: rgba(0,0,0,.10); --line-soft: rgba(0,0,0,.06);
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px;
+    --shadow-card: 0 1px 2px rgba(20,22,26,.04), 0 8px 24px -12px rgba(20,22,26,.10);
+    --shadow-pop: 0 12px 32px -8px rgba(20,22,26,.22);
+    --font-display: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, sans-serif;
+    --font-data: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    font-family: var(--font-body);
+    color: var(--ink); background: var(--canvas); padding: 18px; max-width: 1400px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame { background: transparent; padding: 0; }
+  .topbar {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+    margin-bottom: 18px; background: var(--canvas); border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg); padding: 12px 20px; box-shadow: var(--shadow-card);
+  }
+  .date-pill { justify-self: center; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; font-family: var(--font-display); }
+  .date-pill .ico { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1.5px solid var(--line); cursor: pointer; font-family: inherit; padding: 0; flex: 0 0 auto; transform: rotate(-3deg); }
+  .date-pill .ico:hover { background: #F7F7F7; }
+  .refresh-icon-btn { border: 1.5px solid var(--line); background: #fff; padding: 0; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .refresh-icon-btn img { width: 20px; height: 20px; display: block; }
+  .refresh-icon-btn:disabled { opacity: .5; cursor: default; }
+  .refresh-icon-btn:hover:not(:disabled) { background: #F7F7F7; }
+  .brand { display: flex; align-items: center; gap: 10px; justify-self: start; }
+  .brand__mark { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand__logo { width: 34px; height: 34px; }
+  .brand__text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand__title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); white-space: nowrap; }
+  .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
+  .lti-pill { justify-self: end; display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 18px; background: var(--paper); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
+  .gmail-icon-btn { width: 34px; height: 34px; border-radius: 10px; background: transparent; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .12s ease, border-color .12s ease; }
+  .gmail-icon-btn:hover { background: rgba(0,0,0,.04); border-color: var(--ink); }
+  .lti-pill .num { font-size: 20px; font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+  .lti-pill .lbl { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; text-transform: uppercase; }
+
+  .section-label { font-weight: 700; font-size: 12px; letter-spacing: .06em; color: var(--ink-soft); margin: 22px 2px 10px; text-transform: uppercase; font-family: var(--font-body); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .card {
+    border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas);
+    border: 1px solid var(--line-soft); box-shadow: var(--shadow-card);
+    border-left: 4px solid var(--card-accent, var(--mint));
+    display: flex; flex-direction: column;
+  }
+  .card-head { color: var(--ink); font-weight: 700; font-size: 12.5px; padding: 12px 14px 10px; display: flex; align-items: center; gap: 9px; font-family: var(--font-display); }
+  .card-head .tabicon { flex-shrink: 0; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; transform: rotate(-3deg); background: var(--card-accent, var(--mint)); }
+  .card-head .owner { font-weight: 600; opacity: .8; font-size: 10.5px; margin-left: auto; white-space: nowrap; font-family: var(--font-body); text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); }
+  .kpi-rows { padding: 2px 14px 12px; }
+  .kpi-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
+  .kpi-row:last-child { border-bottom: none; }
+  .kpi-row .lbl { color: var(--ink-soft); }
+  .kpi-row .val { font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+
+  .owner-grid { display: grid; gap: 12px; margin-bottom: 4px; }
+  .owner-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .owner-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+  .bullets { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+  .bullet { display: flex; gap: 8px; align-items: flex-start; }
+  .bullet .rag { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; background: var(--line); }
+  .bullet .rag.green { background: var(--mint-ink); }
+  .bullet .rag.amber { background: #b8860b; }
+  .bullet .rag.red { background: var(--red); }
+  .bullet .btext { font-size: 12.5px; line-height: 1.4; }
+  .bullet .blabel { font-weight: 700; color: var(--ink); }
+  .bullet .bval { color: var(--ink-soft); }
+  .bullet .bval.empty { color: var(--muted); font-style: italic; }
+
+  .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card .card-head .tabicon { background: var(--slate); }
+  .ntk-body { padding: 4px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ntk-line { font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .ntk-section { display: inline-block; background: var(--slate); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: middle; font-family: var(--font-body); }
+  .ntk-label { font-weight: 700; color: var(--ink); }
+  .ntk-value { color: var(--ink-soft); }
+  .wins-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; padding: 4px 16px 16px; }
+  .win-line { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: 12.5px; }
+  .win-line .star { color: #b8860b; font-size: 13px; margin-top: 1px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .btn {
+    appearance: none; border: none; cursor: pointer; border-radius: 999px; padding: 10px 18px;
+    font-family: var(--font-body); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--ink); color: #fff; }
+  .btn.primary:hover { background: #26282d; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.ghost:hover { background: rgba(0,0,0,.04); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .status { font-size: 12px; color: var(--ink-soft); margin-left: auto; font-weight: 600; }
+  .synced-note { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+  .banner { border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .banner.warn { background: #fffaea; color: #8a6a00; border-color: rgba(255,214,55,.55); }
+  .banner.error { background: var(--red-10); color: #a8362a; border-color: rgba(229,102,89,.35); }
+  .banner button { margin-left: auto; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+  .empty-state .big { font-size: 40px; margin-bottom: 10px; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(15,16,18,.55); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: var(--canvas); border-radius: var(--radius-lg); max-width: 640px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 22px 26px; box-shadow: var(--shadow-pop); }
+  .modal h2 { margin: 0 0 4px; font-size: 19px; font-family: var(--font-display); }
+  .modal .sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .close-x { float: right; border: none; background: transparent; color: var(--ink-soft); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 20px; line-height: 1; }
+  .close-x:hover { background: rgba(0,0,0,.05); }
+
+  #toastMsg {
+    font-family: var(--font-body); position: fixed; left: 50%; bottom: 26px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px;
+    font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow-pop);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+    z-index: 100; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  #toastMsg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toastMsg::before { content: "✓"; color: var(--mint); font-weight: 800; }
+
+  @media (max-width: 1000px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: 1fr; }
+    .wins-cols { grid-template-columns: 1fr; }
+    .topbar { grid-template-columns: 1fr; text-align: center; }
+    .topbar-right { justify-self: center; }
+    .brand { justify-self: center; }
+    .date-pill { justify-self: center; }
+  }
+</style>
+
+<script>
+(function () {
+  const FONT = "Poppins, 'Segoe UI', Arial, sans-serif";
+
+  // ---------------- Layout definitions (mirrors the sheet's "New Master" template) ----------------
+  const KPI_SECTIONS = [
+    { key: 'safety', icon: '🦺', title: 'SAFETY', color: 'var(--safety)',
+      metrics: [['ltifr','LTIFR #'], ['nearmiss','Near Miss'], ['safetyconv','Safety Conversation'], ['housekeeping','House Keeping Score']] },
+    { key: 'qc', icon: '🧪', title: 'QC - MONTHLY KPI', color: 'var(--qc)',
+      metrics: [['micro','Micro %'], ['gmp','GMP %'], ['physchem','PhysChem %'], ['sensory','Sensory']] },
+    { key: 'brew', icon: '🍺', title: 'BREW & CELLAR', color: 'var(--brew)',
+      metrics: [['krones','Brewhouse Krones'], ['dme','Brewhouse DME'], ['ferm','Fermentation'], ['bbt','BBT']] },
+    { key: 'packaging', icon: '🥫', title: 'PACKAGING', color: 'var(--packaging)',
+      metrics: [['cartons','Cartons'], ['kegs','Kegs'], ['changeovers','Change Overs'], ['me','Last week ME']] },
+    { key: 'maintenance', icon: '🔧', title: 'MAINTENANCE', color: 'var(--maintenance)',
+      metrics: [['openwo','Open WO'], ['wpwo','WIP WO'], ['breakdowns','Weekly Breakdowns'], ['completed','Weekly Completed WO']] },
+    { key: 'logistics_cs', icon: '🚚', title: 'LOGISTICS & C-SERVICE', color: 'var(--logistics)',
+      metrics: [['soldlts','Sold Lts'], ['complaints','Customer Complaints'], ['keg','Keg'], ['carton','Carton']] },
+  ];
+
+  const OWNER_GROUPS = [
+    { cols: 3, sections: [
+      { key: 'safety_o', icon: '🦺', title: 'Safety', defaultOwner: 'Manny', color: 'var(--safety)', bullets: [
+        "Any incidents or near-misses from the previous day",
+        "Focused safety reminders or safety share",
+        "Time since last Lost Time Incident (LTI) on site",
+        "General information" ] },
+      { key: 'qc_o', icon: '🧪', title: 'QC', defaultOwner: 'Patrick', color: 'var(--qc)', bullets: [
+        "Current Blocked Stock",
+        "Status of any hold or flagged products BA",
+        "Status of any release BA",
+        "Issues from the previous day's testing or inspections",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'brew_o', icon: '🍺', title: 'Brew & Cellar', defaultOwner: 'Flash', color: 'var(--brew)', bullets: [
+        "Brewing schedule and key priorities (e.g., start times for batches, transfers)",
+        "Physchem KPI's (Out of spec Brewhouse Gravitys and pH for last 24hrs)",
+        "Equipment maintenance or downtime impacting brewing (Slow Tx speeds, Brewhouse delays)",
+        "Tank space or fermentation challenges",
+        "CIP in spec and available to transfer into",
+        "Staffing issues",
+        "General information / Temporary checking yeast collection Odor YES or NO" ] },
+    ]},
+    { cols: 4, sections: [
+      { key: 'packaging_o', icon: '🥫', title: 'Packaging', defaultOwner: 'Razor', color: 'var(--packaging)', bullets: [
+        "Overview of packaging runs: canning",
+        "Overview of packaging runs: kegs",
+        "Changeovers planned for the day",
+        "Equipment issues or maintenance planned",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'engineering_o', icon: '📐', title: 'Engineering', defaultOwner: 'Mark', color: 'var(--engineering)', bullets: [
+        "Project and contractor update",
+        "Plant Efficiency Improvements",
+        "General information" ] },
+      { key: 'maintenance_o', icon: '🔧', title: 'Maintenance', defaultOwner: 'Camo', color: 'var(--maintenance)', bullets: [
+        "Plant Equipment status",
+        "Critical repairs - Stop Production",
+        "Preventative tasks for the day",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'logistics_o', icon: '🚚', title: 'Logistics', defaultOwner: 'Jules', color: 'var(--logistics)', bullets: [
+        "Deliveries/pickups",
+        "Stock updates or inventory concerns",
+        "Equipment availability",
+        "Safety Concerns",
+        "Staffing issues",
+        "General information" ] },
+    ]},
+    { cols: 3, sections: [
+      { key: 'customer_o', icon: '🎧', title: 'Customer Service', defaultOwner: 'Grace', color: 'var(--customer)', bullets: [
+        "Updates on customer orders",
+        "Issues impacting timelines",
+        "Customer complaints",
+        "General information" ] },
+      { key: 'planning_o', icon: '📊', title: 'Planning Updates', defaultOwner: 'Paul', color: 'var(--planning)', bullets: [
+        "Overview of today's production schedule: brewing, cellaring, packaging",
+        "Any changes or delays impacting production or deliveries",
+        "Updates on materials or resources (e.g., raw ingredients, cans, bottles)",
+        "General information" ] },
+      { key: 'people_o', icon: '👥', title: 'People', defaultOwner: 'Lara', color: 'var(--people)', bullets: [
+        "Company updates", "", "", "", "" ] },
+    ]},
+  ];
+
+  const WINS_COUNT = 8; // 4 left, 4 right
+
+  // ---------------- Sheet layout map ----------------
+  const SHEET_ID = '1VFv36ypj0DO2vQ2aKCDpiwsBjAsKzaKcxlz7y3I5WAw';
+  const CACHE_KEY = 'last_sheet_sync'; // single shared key: cached copy of the last good sync, for resilience only
+
+  // ---------------- CSV / sheet fetching ----------------
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function tabNameCandidates(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const dNoPad = String(date.getDate());
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const mNoPad = String(date.getMonth() + 1);
+    const yy = String(date.getFullYear()).slice(-2);
+    const yyyy = String(date.getFullYear());
+    return [...new Set([
+      `${d}/${m}/${yy}`, `${d}/${m}`, `${d}/${m}/${yyyy}`, `${dNoPad}/${mNoPad}/${yy}`, `${dNoPad}/${mNoPad}`,
+    ])];
+  }
+
+  async function fetchTabCSV(tabName) {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text || text.length < 20 || /^<(!doctype|html)/i.test(text.trim())) return null;
+    if (!/safety/i.test(text.slice(0, 400))) return null;
+    return parseCSV(text);
+  }
+
+  function fetchTabJSONP(tabName) {
+    return new Promise((resolve, reject) => {
+      const cbName = '__gsheet_cb_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      let settled = false;
+      const cleanup = () => { delete window[cbName]; script.remove(); };
+      window[cbName] = data => {
+        if (settled) return;
+        settled = true;
+        try {
+          const table = data && data.table;
+          if (!table || !table.rows) { resolve(null); return; }
+          const rows = table.rows.map(r => (r.c || []).map(cell => {
+            if (!cell) return '';
+            if (cell.f !== undefined && cell.f !== null) return String(cell.f);
+            if (cell.v !== undefined && cell.v !== null) return String(cell.v);
+            return '';
+          }));
+          // Google's JSON output can strip N header rows into table.cols instead of leaving them in table.rows
+          // (parsedNumHeaders), which silently shifts every row number up relative to the CSV export. Put
+          // reconstructed header row(s) back so row numbering matches the sheet again.
+          const headerCount = table.parsedNumHeaders || 0;
+          for (let i = 0; i < headerCount; i++) {
+            rows.unshift((table.cols || []).map(c => (c && c.label) || ''));
+          }
+          resolve(rows);
+        } catch (e) { resolve(null); }
+        cleanup();
+      };
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tabName)}&tqx=out:json;responseHandler:${cbName}`;
+      script.onerror = () => { if (!settled) { settled = true; reject(new Error('JSONP load failed')); cleanup(); } };
+      document.body.appendChild(script);
+      setTimeout(() => { if (!settled) { settled = true; reject(new Error('JSONP timeout')); cleanup(); } }, 8000);
+    });
+  }
+
+  async function fetchTabRows(tabName) {
+    try { const v = await fetchTabCSV(tabName); if (v) return v; } catch (e) { /* fall through */ }
+    try { const v = await fetchTabJSONP(tabName); if (v && v.length) return v; } catch (e) { /* both failed */ }
+    return null;
+  }
+
+  function ragClass(raw) {
+    const t = (raw || '').toLowerCase();
+    if (/on\s*track/.test(t)) return 'green';
+    if (/at\s*risk/.test(t)) return 'amber';
+    if (/off\s*track|behind|delayed|not\s*on\s*track/.test(t)) return 'red';
+    if (/red|🔴/.test(t)) return 'red';
+    if (/amber|orange|yellow|🟡|🟠/.test(t)) return 'amber';
+    if (/green|🟢/.test(t)) return 'green';
+    return '';
+  }
+
+  function normLabel(s) {
+    return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function labelsMatch(cellText, knownLabel) {
+    const a = normLabel(cellText), b = normLabel(knownLabel);
+    if (!a || !b) return false;
+    const anchor = b.slice(0, Math.min(14, b.length)); // first ~14 normalized chars is plenty distinctive per label
+    return a.includes(anchor);
+  }
+
+  // Builds a fresh, self-contained display object straight from parsed sheet rows — no merging with prior state.
+  // Rows are located by matching each field's known label text rather than trusting fixed row numbers, since the
+  // live export's row alignment has proven to drift from what a static template inspection would suggest.
+  function buildDisplayState(rows, tabName) {
+    const cell = (r, c) => (rows[r - 1] && rows[r - 1][c] !== undefined ? String(rows[r - 1][c]).trim() : '');
+    const findRow = (labelCol, label, fromRow, toRow) => {
+      for (let r = fromRow; r <= toRow; r++) {
+        if (labelsMatch(cell(r, labelCol), label)) return r;
+      }
+      return null;
+    };
+
+    // ---- KPI: each metric's row is wherever its label actually is, searched within its section's label column ----
+    const kpi = {};
+    KPI_SECTIONS.forEach((sec, i) => {
+      const labelCol = i * 2, valueCol = labelCol + 1;
+      let searchFrom = 2;
+      kpi[sec.key] = sec.metrics.map(([key, label]) => {
+        const row = findRow(labelCol, label, searchFrom, searchFrom + 8) || searchFrom;
+        searchFrom = row + 1;
+        return { key, label, value: cell(row, valueCol) };
+      });
+    });
+
+    // ---- Owner blocks: find each section's header row (RAG Status column header), then bullets in sequence ----
+    const OWNER_COL = 0, LABEL_COL = 1, RAG_COL = 6, COMMENT_COL = 7, LAST_COL = 11;
+    const readComment = row => {
+      const parts = [];
+      for (let c = COMMENT_COL; c <= LAST_COL; c++) {
+        const v = cell(row, c);
+        if (v) parts.push(v);
+      }
+      return parts.join(' ');
+    };
+    const isChecked = raw => /^(true|1|yes|✓|checked)$/i.test((raw || '').trim());
+    const owner = {};
+    const needToKnow = [];
+    let cursor = 6; // KPI grid ends around here; first owner header should appear shortly after
+    let safetyLtiValue = '';
+    OWNER_GROUPS.flatMap(g => g.sections).forEach(sec => {
+      let headerRow = null;
+      for (let r = cursor; r <= cursor + 12; r++) {
+        if (normLabel(cell(r, RAG_COL)).includes('rag')) { headerRow = r; break; }
+      }
+      // Need to Know is a checkbox column added after Comments — locate it from this section's own
+      // header row so it's found regardless of exactly which column it landed in.
+      let ntkCol = 12;
+      if (headerRow) {
+        for (let c = LAST_COL + 1; c <= LAST_COL + 6; c++) {
+          if (normLabel(cell(headerRow, c)).includes('need to know')) { ntkCol = c; break; }
+        }
+      }
+      let rowCursor = (headerRow || cursor) + 1;
+      const ownerName = cell(rowCursor, OWNER_COL) || sec.defaultOwner;
+      const bullets = sec.bullets.map(label => {
+        // A blank label means a freeform row with no fixed prompt (e.g. People's extra entries) —
+        // there's no text to search for, so just take the next row in sequence.
+        const row = label ? (findRow(LABEL_COL, label, rowCursor, rowCursor + 10) || rowCursor) : rowCursor;
+        rowCursor = row + 1;
+        const value = readComment(row);
+        if (sec.key === 'safety_o' && /lti/i.test(label)) safetyLtiValue = value;
+        if (value && isChecked(cell(row, ntkCol))) {
+          needToKnow.push({ section: sec.title, label: label || sec.title, value });
+        }
+        return { label, value, rag: ragClass(cell(row, RAG_COL)) };
+      });
+      owner[sec.key] = { ownerName, bullets };
+      cursor = rowCursor;
+    });
+
+    let ltiDays = null;
+    const ltiMatch = safetyLtiValue.match(/(\d+)\s*Days?\s*LTI\s*Free/i);
+    if (ltiMatch) ltiDays = parseInt(ltiMatch[1], 10);
+
+    // ---- Wins: find the "Wins" header, then read the following rows as free-text entries ----
+    let winsHeaderRow = null;
+    for (let r = cursor; r <= cursor + 10; r++) {
+      if (normLabel(cell(r, 0)).includes('wins') || normLabel(cell(r, 1)).includes('wins')) { winsHeaderRow = r; break; }
+    }
+    const winsStart = (winsHeaderRow || cursor) + 1;
+    const winCell = r => cell(r, 1) || cell(r, 0); // win text lives in column B, like every other free-text row
+    const winsLeft = [], winsRight = [];
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsLeft.push(winCell(winsStart + i));
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsRight.push(winCell(winsStart + WINS_COUNT / 2 + i));
+
+    return { tabName, kpi, owner, ltiDays, winsLeft, winsRight, needToKnow, syncedAt: new Date().toISOString() };
+  }
+
+  // ---------------- App state & rendering ----------------
+  let current = null;      // last successfully synced display state (or null if never synced)
+  let lastError = null;    // { triedNames } if the most recent sync attempt failed
+  let syncing = false;
+  let activeDate = new Date(); // which day's tab we're looking for — defaults to today, but can be changed
+  const isViewingToday = () => activeDate.toDateString() === new Date().toDateString();
+
+  const app = document.getElementById('app');
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+
+  function fmtSyncTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function render() {
+    app.innerHTML = '';
+    const frame = el('div', 'frame');
+    app.appendChild(frame);
+
+    if (lastError) {
+      const banner = el('div', 'banner warn');
+      banner.innerHTML = `<span>⚠️ Last sync couldn't find today's tab (tried: ${lastError.triedNames.map(n => `"${n}"`).join(', ')}). ${current ? 'Showing the last successful sync below.' : ''}</span>`;
+      const btn = el('button', 'btn ghost', 'Enter tab name');
+      btn.addEventListener('click', () => showManualTabModal(lastError.triedNames));
+      banner.appendChild(btn);
+      frame.appendChild(banner);
+    }
+
+    if (!current) {
+      const empty = el('div', 'empty-state');
+      empty.innerHTML = `<div class="big">📋</div><div>Not synced yet — click "Sync from 9am Sheet" below to pull in today's data.</div><div style="opacity:.5;font-size:11px;margin-top:10px;">Build: label-search-v1 (2026-07-22)</div>`;
+      frame.appendChild(empty);
+      appendToolbar(frame, true);
+      return;
+    }
+
+    // top bar
+    const topbar = el('div', 'topbar');
+
+    // LEFT: brand block — logo + title/sub, matching the Logistics site's header
+    const brand = el('div', 'brand');
+    const brandMark = el('div', 'brand__mark');
+    brandMark.innerHTML = `<svg viewBox="0 0 161 161" class="brand__logo" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#47D7AC" d="M136.3,70.4l-9.4-9.4c-1.6-1.6-4.3-1.6-6,0-1.6,1.6-1.6,4.3,0,6l2.3,2.3c-9.6,13.2-25.2,21.7-42.7,21.7s-33.1-8.6-42.7-21.8l2.3-2.3c1.6-1.6,1.6-4.3,0-6-1.6-1.6-4.3-1.6-6,0l-9.4,9.4c-1.6,1.6-1.6,4.3,0,6,.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2l1.1-1.1c11.2,14.7,28.9,24.2,48.7,24.2s37.5-9.5,48.7-24.2l1.1,1.1c.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2c1.6-1.6,1.6-4.3,0-6"/>
+      <path fill="#47D7AC" d="M152.5,8.5v144H8.5V8.5h144M161,0H0v161h161V0h0Z"/>
+    </svg>`;
+    brand.appendChild(brandMark);
+    const brandText = el('div', 'brand__text');
+    brandText.innerHTML = `<span class="brand__title">9AM What's Up Meeting</span><span class="brand__sub">Balter Brewing</span>`;
+    brand.appendChild(brandText);
+    topbar.appendChild(brand);
+
+    // MIDDLE: calendar picker + date + refresh, grouped and centered
+    const datePill = el('div', 'date-pill');
+    datePill.innerHTML = `<span>${escapeHtml(current.tabName)}</span>`;
+    topbar.appendChild(datePill);
+    const updateBtn = document.createElement('button');
+    updateBtn.className = 'refresh-icon-btn';
+    updateBtn.title = syncing ? 'Updating…' : 'Update';
+    updateBtn.disabled = syncing;
+    updateBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#47D7AC" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>`;
+    updateBtn.addEventListener('click', () => syncFromSheet(false));
+    datePill.appendChild(updateBtn);
+    const icoBtn = el('button', 'ico', '📅');
+    icoBtn.title = 'View a different day';
+    icoBtn.addEventListener('click', showDatePickerModal);
+    datePill.insertBefore(icoBtn, datePill.firstChild);
+    if (!isViewingToday()) {
+      const todayBtn = el('button', 'btn ghost', '↩ Today');
+      todayBtn.style.cssText = 'padding:6px 10px;font-size:12px;';
+      todayBtn.addEventListener('click', () => { activeDate = new Date(); syncFromSheet(false); });
+      datePill.appendChild(todayBtn);
+    }
+
+    // RIGHT: email export + LTI counter
+    const rightGroup = el('div', 'topbar-right');
+    const gmailIconBtn = document.createElement('button');
+    gmailIconBtn.className = 'btn primary';
+    gmailIconBtn.type = 'button';
+    gmailIconBtn.title = 'Copy formatted email to clipboard';
+    gmailIconBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12l6 6L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Build handover email`;
+    gmailIconBtn.addEventListener('click', async () => {
+      const originalHTML = gmailIconBtn.innerHTML;
+      const ok = await exportToGmail();
+      if (!ok) return; // fallback modal already shown — don't falsely claim success
+      gmailIconBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12l6 6L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Copied to clipboard!`;
+      gmailIconBtn.disabled = true;
+      setTimeout(() => {
+        gmailIconBtn.innerHTML = originalHTML;
+        gmailIconBtn.disabled = false;
+      }, 2200);
+    });
+    rightGroup.appendChild(gmailIconBtn);
+    const ltiPill = el('div', 'lti-pill');
+    ltiPill.innerHTML = `<span style="font-size:18px">🏆</span><span class="num">${current.ltiDays !== null ? current.ltiDays : '—'}</span><span class="lbl">DAYS<br>LTI FREE</span>`;
+    rightGroup.appendChild(ltiPill);
+    const logoutBtn = document.createElement('a');
+    logoutBtn.href = '/logout';
+    logoutBtn.className = 'btn ghost';
+    logoutBtn.style.cssText = 'padding:8px 14px;font-size:12px;text-decoration:none;';
+    logoutBtn.textContent = 'Log out';
+    rightGroup.appendChild(logoutBtn);
+    topbar.appendChild(rightGroup);
+    frame.appendChild(topbar);
+
+    // KPI grid
+    frame.appendChild(el('div', 'section-label', 'KPI Snapshot'));
+    const kpiGrid = el('div', 'kpi-grid');
+    KPI_SECTIONS.forEach(sec => {
+      const card = el('div', 'card');
+      card.style.setProperty('--card-accent', sec.color);
+      const head = el('div', 'card-head', `<span class="tabicon">${sec.icon}</span><span>${sec.title}</span>`);
+      card.appendChild(head);
+      const rows = el('div', 'kpi-rows');
+      current.kpi[sec.key].forEach(m => {
+        const row = el('div', 'kpi-row');
+        row.appendChild(el('span', 'lbl', escapeHtml(m.label)));
+        row.appendChild(el('span', 'val', escapeHtml(m.value) || '–'));
+        rows.appendChild(row);
+      });
+      card.appendChild(rows);
+      kpiGrid.appendChild(card);
+    });
+    frame.appendChild(kpiGrid);
+
+    // need to know — flagged rows from the sheet's "Need to Know" checkbox column
+    if (current.needToKnow && current.needToKnow.length) {
+      const ntkCard = el('div', 'ntk-card');
+      const ntkHead = el('div', 'card-head', `<span class="tabicon">🎯</span><span>EXECUTIVE SUMMARY</span>`);
+      ntkCard.appendChild(ntkHead);
+      const ntkBody = el('div', 'ntk-body');
+      current.needToKnow.forEach(item => {
+        const row = el('div', 'ntk-line');
+        row.innerHTML = `<span class="ntk-section">${escapeHtml(item.section)}</span><span class="ntk-label">${escapeHtml(item.label)}:</span> <span class="ntk-value">${escapeHtml(item.value)}</span>`;
+        ntkBody.appendChild(row);
+      });
+      ntkCard.appendChild(ntkBody);
+      frame.appendChild(ntkCard);
+    }
+
+    // wins
+    const winsCard = el('div', 'wins-card');
+    const wHead = el('div', 'card-head', `<span class="tabicon" style="background:var(--pale);">🏆</span><span>WINS</span>`);
+    winsCard.appendChild(wHead);
+    const winsCols = el('div', 'wins-cols');
+    const colLeft = el('div'), colRight = el('div');
+    current.winsLeft.filter(Boolean).forEach(w => { const l = el('div', 'win-line'); l.innerHTML = `<span class="star">★</span><span>${escapeHtml(w)}</span>`; colLeft.appendChild(l); });
+    current.winsRight.filter(Boolean).forEach(w => { const l = el('div', 'win-line'); l.innerHTML = `<span class="star">★</span><span>${escapeHtml(w)}</span>`; colRight.appendChild(l); });
+    if (!current.winsLeft.some(Boolean) && !current.winsRight.some(Boolean)) {
+      colLeft.innerHTML = `<div class="win-line" style="color:#B9C0C9;font-style:italic;">No wins logged yet</div>`;
+    }
+    winsCols.appendChild(colLeft); winsCols.appendChild(colRight);
+    winsCard.appendChild(winsCols);
+    frame.appendChild(winsCard);
+
+    // owner tiles
+    frame.appendChild(el('div', 'section-label', 'Daily Updates by Owner'));
+    OWNER_GROUPS.forEach(group => {
+      const grid = el('div', `owner-grid g${group.cols}`);
+      group.sections.forEach(sec => {
+        const card = el('div', 'card');
+        card.style.setProperty('--card-accent', sec.color);
+        const head = el('div', 'card-head', `<span class="tabicon">${sec.icon}</span><span>${sec.title}</span><span class="owner">Owner: ${escapeHtml(current.owner[sec.key].ownerName)}</span>`);
+        card.appendChild(head);
+        const bwrap = el('div', 'bullets');
+        const filled = current.owner[sec.key].bullets.filter(b => b.value);
+        if (!filled.length) {
+          bwrap.appendChild(el('div', 'btext', '<span class="bval empty">No updates logged yet</span>'));
+        } else {
+          filled.forEach(b => {
+            const row = el('div', 'bullet');
+            row.appendChild(el('span', `rag ${b.rag}`));
+            const text = el('div', 'btext');
+            text.innerHTML = b.label
+              ? `<span class="blabel">${escapeHtml(b.label)}: </span><span class="bval">${escapeHtml(b.value)}</span>`
+              : `<span class="bval">${escapeHtml(b.value)}</span>`;
+            row.appendChild(text);
+            bwrap.appendChild(row);
+          });
+        }
+        card.appendChild(bwrap);
+        grid.appendChild(card);
+      });
+      frame.appendChild(grid);
+    });
+
+    appendToolbar(frame, false);
+    frame.appendChild(el('div', 'synced-note', `Last synced ${fmtSyncTime(current.syncedAt)} from tab "${escapeHtml(current.tabName)}" — this page mirrors the Google Sheet and isn't editable here.<br><span style="opacity:.6;">Build: label-search-v1 (2026-07-22)</span>`));
+  }
+
+  function appendToolbar(frame, includeSyncButton) {
+    const toolbar = el('div', 'toolbar');
+    if (includeSyncButton) {
+      const syncBtn = el('button', 'btn primary', syncing ? 'Syncing…' : '🔄 Sync from 9am Sheet');
+      syncBtn.disabled = syncing;
+      syncBtn.addEventListener('click', () => syncFromSheet(false));
+      toolbar.appendChild(syncBtn);
+    }
+    const statusEl = el('span', 'status', ''); statusEl.id = 'statusEl';
+    toolbar.appendChild(statusEl);
+    frame.appendChild(toolbar);
+  }
+
+  let flashTimer;
+  function flashStatus(msg) {
+    const s = document.getElementById('statusEl');
+    if (!s) return;
+    s.textContent = msg;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { s.textContent = ''; }, 2500);
+  }
+
+  // ---------------- Sync orchestration ----------------
+  async function cacheLastGood(display) {
+    try { await window.storage.set(CACHE_KEY, JSON.stringify(display), true); } catch (e) { /* best effort only */ }
+  }
+  async function loadCachedLast() {
+    try {
+      const r = await window.storage.get(CACHE_KEY, true);
+      return r && r.value ? JSON.parse(r.value) : null;
+    } catch (e) { return null; }
+  }
+
+  async function syncFromSheet(silent) {
+    if (syncing) return;
+    syncing = true;
+    if (!silent) { render(); flashStatus('Syncing from sheet…'); }
+    const candidates = tabNameCandidates(activeDate);
+    let found = null;
+    for (const name of candidates) {
+      const rows = await fetchTabRows(name);
+      if (rows) { found = { name, rows }; break; }
+    }
+    syncing = false;
+    if (found) {
+      current = buildDisplayState(found.rows, found.name);
+      lastError = null;
+      if (isViewingToday()) cacheLastGood(current); // only today's data should back the offline fallback cache
+      render();
+      flashStatus(`Synced from "${found.name}"`);
+      return true;
+    }
+    lastError = { triedNames: candidates };
+    render();
+    if (!silent) flashStatus('Could not find a matching tab');
+    return false;
+  }
+
+  async function manualSyncTab(name, statusEl) {
+    statusEl.textContent = `Trying "${name}"…`;
+    const rows = await fetchTabRows(name);
+    if (!rows) { statusEl.textContent = `Couldn't read a tab named "${name}". Double check the exact spelling in the sheet.`; return; }
+    current = buildDisplayState(rows, name);
+    lastError = null;
+    if (isViewingToday()) cacheLastGood(current);
+    render();
+    flashStatus(`Synced from "${name}"`);
+    const backdrop = statusEl.closest('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+  }
+
+  function showDatePickerModal() {
+    const backdrop = el('div', 'modal-backdrop');
+    const modal = el('div', 'modal');
+    const closeBtn = el('button', 'close-x', '✕');
+    closeBtn.addEventListener('click', () => backdrop.remove());
+    modal.appendChild(closeBtn);
+    modal.appendChild(el('h2', '', 'View a different day'));
+    modal.appendChild(el('div', 'sub', "Pick a date and I'll look for that day's tab in the sheet — works for yesterday, six months back, whenever a tab exists for that date."));
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.value = activeDate.toISOString().slice(0, 10);
+    input.max = new Date().toISOString().slice(0, 10);
+    input.style.cssText = 'flex:1;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;';
+    const goBtn = el('button', 'btn primary', 'View');
+    const statusEl = el('div', 'sub', ''); statusEl.style.marginTop = '8px';
+    goBtn.addEventListener('click', async () => {
+      if (!input.value) { statusEl.textContent = 'Pick a date first.'; return; }
+      const picked = new Date(input.value + 'T00:00:00');
+      if (isNaN(picked)) { statusEl.textContent = 'That date looks invalid.'; return; }
+      statusEl.textContent = 'Looking for that day…';
+      activeDate = picked;
+      const ok = await syncFromSheet(true);
+      if (ok) { backdrop.remove(); }
+      else { statusEl.textContent = `Couldn't find a tab for ${picked.toLocaleDateString()}. Close this and use the banner below to try an exact tab name instead.`; }
+    });
+    row.appendChild(input); row.appendChild(goBtn);
+    modal.appendChild(row); modal.appendChild(statusEl);
+    backdrop.appendChild(modal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+    document.body.appendChild(backdrop);
+  }
+
+  function showManualTabModal(triedNames) {
+    const backdrop = el('div', 'modal-backdrop');
+    const modal = el('div', 'modal');
+    const closeBtn = el('button', 'close-x', '✕');
+    closeBtn.addEventListener('click', () => backdrop.remove());
+    modal.appendChild(closeBtn);
+    modal.appendChild(el('h2', '', "Couldn't find today's tab"));
+    modal.appendChild(el('div', 'sub',
+      `Tried: ${triedNames.map(n => `"${n}"`).join(', ')}. Type the exact tab name as it appears in the sheet, or confirm the sheet is still shared as "Anyone with the link can view."`));
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:6px;';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'e.g. 22/07/26';
+    input.style.cssText = 'flex:1;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;';
+    const tryBtn = el('button', 'btn primary', 'Try this tab');
+    const statusEl = el('div', 'sub', ''); statusEl.style.marginTop = '8px';
+    tryBtn.addEventListener('click', () => { if (input.value.trim()) manualSyncTab(input.value.trim(), statusEl); });
+    row.appendChild(input); row.appendChild(tryBtn);
+    modal.appendChild(row); modal.appendChild(statusEl);
+    backdrop.appendChild(modal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+    document.body.appendChild(backdrop);
+  }
+
+  let autoSyncedDate = null;
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function checkAutoSync() {
+    if (!isViewingToday()) return; // don't yank someone back to today while they're looking at a past day
+    const now = new Date();
+    const isPast915 = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() >= 15);
+    if (isPast915 && autoSyncedDate !== todayISO()) {
+      autoSyncedDate = todayISO();
+      syncFromSheet(true);
+    }
+  }
+
+  // ---------------- Export: Gmail ----------------
+  const COLOR_HEX = {
+    'var(--safety)': '#47D7AC', 'var(--qc)': '#7566A0', 'var(--brew)': '#99D6EA',
+    'var(--packaging)': '#FDAA63', 'var(--maintenance)': '#FFD637', 'var(--logistics)': '#8C93D8',
+    'var(--engineering)': '#8BC48A', 'var(--customer)': '#F2937D', 'var(--planning)': '#B295D1', 'var(--people)': '#6C7A89',
+  };
+  function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function emailKpiTile(sec) {
+    const hex = COLOR_HEX[sec.color] || '#14161a';
+    const rows = current.kpi[sec.key].map(m => `
+      <tr>
+        <td style="padding:5px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#55585F;border-bottom:1px solid #F0F1F3;">${escHtml(m.label)}</td>
+        <td align="right" style="padding:5px 8px;font-family:'Courier New',Courier,monospace;font-size:11px;font-weight:700;color:#14161a;border-bottom:1px solid #F0F1F3;">${escHtml(m.value)}</td>
+      </tr>`).join('');
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid ${hex};border-radius:8px;">
+      <tr><td colspan="2" style="padding:8px 9px 6px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="width:22px;height:22px;background:${hex};border-radius:6px;text-align:center;font-size:11px;line-height:22px;">${escHtml(sec.icon)}</td>
+          <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">${escHtml(sec.title)}</td>
+        </tr></table>
+      </td></tr>
+      ${rows}</table>`;
+  }
+  function emailRowOfTiles(tilesHtml, perRow) {
+    let out = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+    tilesHtml.forEach((html, i) => {
+      out += `<td width="${Math.floor(100 / perRow)}%" valign="top" style="padding:5px;vertical-align:top;">${html}</td>`;
+      if ((i + 1) % perRow === 0 && i !== tilesHtml.length - 1) out += '</tr><tr>';
+    });
+    return out + '</tr></table>';
+  }
+  function emailOwnerSection(sec) {
+    const hex = COLOR_HEX[sec.color] || '#14161a';
+    const o = current.owner[sec.key];
+    const filled = o.bullets.filter(b => b.value);
+    if (!filled.length) return ''; // nothing posted in this tile — leave it out entirely
+
+    const dataRows = filled.map((b, i) => `
+      <tr>
+        <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === filled.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;">${escHtml(b.label)}</td>
+        <td style="padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#14161a;border-bottom:${i === filled.length - 1 ? 'none' : '1px solid #EDEDED'};">${escHtml(b.value)}</td>
+      </tr>`).join('');
+
+    return `
+      <tr><td style="height:20px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td width="6" style="background:${hex};border-radius:2px;line-height:1px;font-size:1px;">&nbsp;</td>
+          <td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:13.5px;color:#14161a;text-transform:uppercase;letter-spacing:.03em;">${escHtml(sec.title)}</td>
+          <td align="right" style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:10px;color:#9a9da3;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;">Owner: ${escHtml(o.ownerName)}</td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:8px;overflow:hidden;">
+          <tr>
+            <td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;">Field</td>
+            <td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;">Update</td>
+          </tr>
+          ${dataRows}
+        </table>
+      </td></tr>`;
+  }
+  function buildEmailHtml() {
+    const ownerBlocks = OWNER_GROUPS.flatMap(g => g.sections).map(emailOwnerSection).join('');
+    const kpiRows = emailRowOfTiles(KPI_SECTIONS.map(emailKpiTile), 3);
+    const winsLeft = current.winsLeft.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
+    const winsRight = current.winsRight.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
+    const ntkItems = (current.needToKnow || []).map(item => `
+      <tr><td style="padding:5px 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#55585F;line-height:1.4;">
+        <span style="display:inline-block;background:#6C7A89;color:#ffffff;font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;">${escHtml(item.section)}</span>
+        <b>${escHtml(item.label)}:</b> ${escHtml(item.value)}
+      </td></tr>`).join('');
+    const ntkBlock = ntkItems ? `
+      <tr><td style="height:14px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #6C7A89;border-radius:8px;">
+          <tr><td style="padding:8px 9px 6px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="width:22px;height:22px;background:#6C7A89;border-radius:6px;text-align:center;font-size:11px;line-height:22px;">&#127919;</td>
+              <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">EXECUTIVE SUMMARY</td>
+            </tr></table>
+          </td></tr>
+          <tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>
+        </table>
+      </td></tr>` : '';
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:16px;max-width:900px;width:100%;">
+      <tr><td style="padding:16px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="33%"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:30px;"><img src="data:image/png;base64,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" width="34" height="34" alt="Balter" style="display:inline-block;vertical-align:middle;" /></td>
+                <td style="padding-left:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:#14161a;line-height:1.15;">9AM What's Up Meeting</td></tr>
+                  <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9da3;padding-top:1px;">Balter Brewing</td></tr></table>
+                </td>
+              </tr></table></td>
+              <td width="34%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(current.tabName)}</td>
+              <td width="33%" align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#14161a;">&#127942; ${current.ltiDays !== null ? current.ltiDays : '—'} Days LTI Free</td>
+            </tr></table>
+          </td></tr>
+          ${ntkBlock}
+          <tr><td style="height:14px;"></td></tr>
+          <tr><td>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #F1EB9C;border-radius:8px;">
+              <tr><td style="padding:8px 9px 6px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:22px;height:22px;background:#F1EB9C;border-radius:6px;text-align:center;font-size:11px;line-height:22px;">&#127942;</td>
+                  <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">WINS</td>
+                </tr></table>
+              </td></tr>
+              <tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td width="50%" valign="top">${winsLeft}</td><td width="50%" valign="top">${winsRight}</td>
+              </tr></table></td></tr>
+            </table>
+          </td></tr>
+          ${ownerBlocks}
+          <tr><td style="height:20px;"></td></tr>
+          <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:12px;color:#9a9da3;letter-spacing:.05em;padding-bottom:6px;">KPI SNAPSHOT</td></tr>
+          <tr><td>${kpiRows}</td></tr>
+        </table>
+      </td></tr>
+    </table>`;
+  }
+
+  function buildEmailPlainText() {
+    const lines = [current.tabName, ''];
+    if (current.needToKnow && current.needToKnow.length) {
+      lines.push('EXECUTIVE SUMMARY');
+      current.needToKnow.forEach(item => lines.push(`  - [${item.section}] ${item.label}: ${item.value}`));
+      lines.push('');
+    }
+    lines.push('WINS');
+    [...current.winsLeft, ...current.winsRight].filter(Boolean).forEach(w => lines.push(`  - ${w}`));
+    lines.push('');
+    OWNER_GROUPS.flatMap(g => g.sections).forEach(sec => {
+      const o = current.owner[sec.key];
+      const filled = o.bullets.filter(b => b.value);
+      if (!filled.length) return; // nothing posted in this tile — leave it out entirely
+      lines.push(`${sec.title} — Owner: ${o.ownerName}`);
+      filled.forEach(b => lines.push(b.label ? `  - ${b.label}: ${b.value}` : `  - ${b.value}`));
+      lines.push('');
+    });
+    lines.push('KPI SNAPSHOT');
+    KPI_SECTIONS.forEach(sec => { lines.push(sec.title); current.kpi[sec.key].forEach(m => lines.push(`  ${m.label}: ${m.value}`)); lines.push(''); });
+    return lines.join('\n');
+  }
+  let toastTimer;
+  function showToast(msg) {
+    let toast = document.getElementById('toastMsg');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toastMsg';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 2600);
+  }
+
+  function showEmailCopyFallback(html) {
+    const backdrop = el('div', 'modal-backdrop');
+    const modal = el('div', 'modal');
+    const closeBtn = el('button', 'close-x', '✕');
+    closeBtn.addEventListener('click', () => backdrop.remove());
+    modal.appendChild(closeBtn);
+    modal.appendChild(el('h2', '', "Couldn't copy automatically"));
+    modal.appendChild(el('div', 'sub', "Your browser blocked the automatic copy. Click inside the box below, select all (Ctrl/Cmd+A), and copy (Ctrl/Cmd+C) — then paste into your email."));
+    const preview = document.createElement('div');
+    preview.contentEditable = 'true';
+    preview.style.cssText = 'border:1px solid #E5E7EB;border-radius:10px;padding:14px;max-height:50vh;overflow:auto;';
+    preview.innerHTML = html;
+    modal.appendChild(preview);
+    backdrop.appendChild(modal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+    document.body.appendChild(backdrop);
+  }
+
+  async function exportToGmail() {
+    if (!current) { showToast('Nothing synced yet'); return false; }
+    const html = buildEmailHtml();
+    const text = buildEmailPlainText();
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const item = new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) });
+        await navigator.clipboard.write([item]);
+        showToast('Email copied — ready to paste');
+        return true;
+      }
+    } catch (err) { console.error('Clipboard write failed', err); }
+    showEmailCopyFallback(html);
+    return false;
+  }
+
+  // ---------------- Boot ----------------
+  function waitForStorage(timeoutMs) {
+    return new Promise(resolve => {
+      const start = Date.now();
+      (function check() {
+        if (window.storage) return resolve(true);
+        if (Date.now() - start > (timeoutMs || 3000)) return resolve(false);
+        setTimeout(check, 30);
+      })();
+    });
+  }
+
+  async function boot() {
+    await waitForStorage();
+    current = await loadCachedLast(); // show last-known-good immediately if we have one
+    render();
+    await syncFromSheet(true); // then try a live sync straight away
+    checkAutoSync();
+    setInterval(checkAutoSync, 60000);
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
