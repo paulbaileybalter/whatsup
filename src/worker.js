@@ -128,8 +128,7 @@ const SUMMARY_SYSTEM = [
 
 const SUMMARY_SYSTEM_DAILY = [
   "You write the Executive Summary for a brewery's daily 9AM operations meeting.",
-  "You get today's Key Points (each tagged with its section, e.g. QC, Packaging) and today's Wins (tagged Win). Write a plain, factual summary of the day for leadership: three to four sentences, roughly 60 to 90 words, Australian English. Include the specific details that matter (products, quantities, tanks, lines, outcomes) rather than generalities. Use a neutral, professional tone: plain words and no dramatic, colourful or promotional language.",
-  "Only mention teams that have a point in the list. Leave out any team that did not report anything: never name them, list them, or say that they had no updates or nothing to report. Do not comment on what is missing.",
+  "You get today's Key Points (each tagged with its section, e.g. QC, Packaging) and today's Wins (tagged Win). Write a short plain-text summary of the day for leadership: 2-4 sentences, Australian English.",
   "Lead with what matters most; mention wins briefly if there are any. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
@@ -138,9 +137,7 @@ const SUMMARY_SYSTEM_DAILY = [
 
 function sectionPrompt(sec, mode) {
   if (mode === 'daily') {
-    const teams = [...new Set(sec.items.map(i => i.dayLabel).filter(t => t && t !== 'Win'))];
-    return `Teams that reported today (mention only these): ${teams.join(', ') || 'none'}\n` +
-      `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}] ${i.value}`).join('\n');
+    return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}] ${i.value}`).join('\n');
   }
   const lines = sec.items.map(i => `- ${i.dayLabel}: ${i.value}`); // field names are deliberately left out
   const team = sec.title.replace(/\s+Updates$/i, '');
@@ -184,7 +181,7 @@ async function callLLM(env, system, prompt, maxTokens) {
 }
 
 async function summariseOne(env, sec, mode) {
-  return callLLM(env, mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM, sectionPrompt(sec, mode), mode === 'daily' ? 500 : 400);
+  return callLLM(env, mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM, sectionPrompt(sec, mode), mode === 'daily' ? 400 : 400);
 }
 
 async function handleSummarize(request, env) {
