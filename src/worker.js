@@ -124,20 +124,31 @@ const SUMMARY_SYSTEM = [
   "No headings, bullets, markdown or preamble - just the summary text.",
 ].join(' ');
 
-function sectionPrompt(sec) {
+const SUMMARY_SYSTEM_DAILY = [
+  "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting.",
+  "You get the points flagged for today, each tagged with its section (e.g. QC, Packaging). Write a short plain-text summary of today for leadership: 2-4 sentences, Australian English.",
+  "Lead with what matters most. Only use facts in the points; never invent numbers, causes or actions.",
+  "No headings, bullets, markdown or preamble - just the summary text.",
+].join(' ');
+
+function sectionPrompt(sec, mode) {
+  if (mode === 'daily') {
+    return `Today's Executive Summary points:\n` + sec.items.map(i => `- [${i.dayLabel}]${i.label && i.label !== i.dayLabel ? ' ' + i.label + ':' : ''} ${i.value}`).join('\n');
+  }
   const lines = sec.items.map(i => `- ${i.dayLabel}${i.label && i.label !== sec.title ? ' (' + i.label + ')' : ''}: ${i.value}`);
   return `Section: ${sec.title}\nPoints:\n${lines.join('\n')}`;
 }
 
-async function summariseOne(env, sec) {
-  const prompt = sectionPrompt(sec);
+async function summariseOne(env, sec, mode) {
+  const prompt = sectionPrompt(sec, mode);
+  const system = mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM;
   if (env.ANTHROPIC_API_KEY) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
-        max_tokens: 400, system: SUMMARY_SYSTEM,
+        max_tokens: 400, system,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -152,7 +163,7 @@ async function summariseOne(env, sec) {
     for (const model of models) {
       try {
         const out = await env.AI.run(model, {
-          messages: [{ role: 'system', content: SUMMARY_SYSTEM }, { role: 'user', content: prompt }],
+          messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
           max_tokens: 400,
         });
         const text = String((out && (out.response || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content))) || '').trim();
@@ -173,6 +184,7 @@ async function handleSummarize(request, env) {
   if (raw.length > 100000) return json({ error: 'Request too large' }, 413);
   let body;
   try { body = JSON.parse(raw); } catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  const mode = body.mode === 'daily' ? 'daily' : 'weekly';
   const sections = Array.isArray(body.sections) ? body.sections.slice(0, 12) : [];
   const clean = sections.map(s => ({
     title: String((s && s.title) || '').slice(0, 60),
@@ -187,7 +199,7 @@ async function handleSummarize(request, env) {
   const summaries = {};
   const errors = [];
   await Promise.all(clean.map(async sec => {
-    try { summaries[sec.title] = await summariseOne(env, sec); }
+    try { summaries[sec.title] = await summariseOne(env, sec, mode); }
     catch (e) { errors.push(sec.title + ': ' + (e.message || 'failed')); }
   }));
   if (!Object.values(summaries).some(Boolean)) return json({ error: errors[0] || 'AI request failed' }, 502);

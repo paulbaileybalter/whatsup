@@ -98,6 +98,19 @@
   .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card .card-head .tabicon { background: var(--slate); }
+  .ntk-sum { background: #F4F6F7; border: 1px solid rgba(108,122,137,.3); border-radius: var(--radius-md); padding: 10px 12px; font-size: 13px; line-height: 1.5; color: var(--ink); }
+  .ntk-sum.pending { color: var(--muted); font-style: italic; }
+  .ai-tag { display: inline-block; background: var(--mint); color: var(--ink); font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 5px; padding: 1px 6px; margin-right: 8px; font-style: normal; }
+  .ai-tag.edited { background: var(--apricot); }
+  .ntk-stale { margin-top: 6px; font-size: 11.5px; color: #9a5b12; }
+  .ntk-err { margin-top: 6px; font-size: 11.5px; color: #a32a2a; }
+  .wk-btn { margin-left: auto; border: 1.5px solid var(--line); background: #fff; border-radius: 999px; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 4px 10px; cursor: pointer; color: var(--ink); }
+  .wk-btn:hover:not(:disabled) { background: rgba(0,0,0,.04); }
+  .wk-btn:disabled { opacity: .5; cursor: default; }
+  .wk-link { border: none; background: none; padding: 0; margin: 8px 0 0; display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--mint-ink); cursor: pointer; text-decoration: underline; }
+  .wk-edit { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; resize: vertical; background: #fff; }
+  .wk-edit:focus { outline: none; border-color: var(--mint); }
+  .wk-edit-row { display: flex; gap: 8px; margin-top: 8px; }
   .ntk-body { padding: 4px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
   .ntk-line { font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
   .ntk-section { display: inline-block; background: var(--slate); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: middle; font-family: var(--font-body); }
@@ -467,6 +480,38 @@
   }
   function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
 
+  // ---------------- Executive Summary AI summary (per day, saved in this browser) ----------------
+  let dSummary = null, dLoadedFor = null, dBusy = false, dError = '', dEditing = false, dDraft = '';
+  function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0); }
+  const dKey = () => 'daily_ai_v1_' + current.tabName;
+  const ntkBasis = () => hashStr((current.needToKnow || []).map(i => i.section + '|' + i.label + '|' + i.value).join('\n'));
+  function dSave() { try { if (dSummary) localStorage.setItem(dKey(), JSON.stringify(dSummary)); else localStorage.removeItem(dKey()); } catch (e) {} }
+  async function generateDailySummary() {
+    if (dBusy || !current || !(current.needToKnow || []).length) return;
+    const forTab = current.tabName;
+    dBusy = true; dError = ''; render();
+    try {
+      const res = await fetch('/api/summarize', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'daily', sections: [{ title: 'Executive Summary', items: current.needToKnow.map(i => ({ dayLabel: i.section, label: i.label, value: i.value })) }] }),
+      });
+      if (res.redirected || res.status === 401) { location.href = '/login'; return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      const text = data.summaries && data.summaries['Executive Summary'];
+      if (!text) throw new Error('No summary returned');
+      if (current && current.tabName === forTab) { dSummary = { text, edited: false, basis: ntkBasis() }; dSave(); }
+    } catch (e) { dError = e.message || 'unknown error'; }
+    dBusy = false; render();
+  }
+  // Called at the top of render(): loads the saved summary when the viewed day changes, and writes one if none exists yet.
+  function syncDailySummaryState() {
+    if (!current || dLoadedFor === current.tabName) return;
+    dLoadedFor = current.tabName; dSummary = null; dError = ''; dEditing = false;
+    try { const x = JSON.parse(localStorage.getItem(dKey()) || 'null'); if (x && x.text) dSummary = x; } catch (e) {}
+    if (!dSummary && (current.needToKnow || []).length) setTimeout(generateDailySummary, 0);
+  }
+
   function fmtSyncTime(iso) {
     if (!iso) return '';
     const d = new Date(iso);
@@ -474,6 +519,7 @@
   }
 
   function render() {
+    syncDailySummaryState();
     app.innerHTML = '';
     const frame = el('div', 'frame');
     app.appendChild(frame);
@@ -596,8 +642,52 @@
     if (current.needToKnow && current.needToKnow.length) {
       const ntkCard = el('div', 'ntk-card');
       const ntkHead = el('div', 'card-head', `<span class="tabicon">🎯</span><span>EXECUTIVE SUMMARY</span>`);
+      const redo = el('button', 'wk-btn', dBusy ? '…' : '↻ Redo summary');
+      redo.title = 'Write a new AI summary of today\'s points';
+      redo.disabled = dBusy;
+      redo.addEventListener('click', () => {
+        if (dSummary && dSummary.edited && !confirm('This will replace your edited summary. Continue?')) return;
+        dEditing = false; generateDailySummary();
+      });
+      ntkHead.appendChild(redo);
       ntkCard.appendChild(ntkHead);
       const ntkBody = el('div', 'ntk-body');
+      if (dEditing) {
+        const box = el('div', 'ntk-sum');
+        const ta = document.createElement('textarea');
+        ta.className = 'wk-edit'; ta.rows = 4; ta.value = dDraft;
+        ta.addEventListener('input', () => { dDraft = ta.value; });
+        box.appendChild(ta);
+        const row = el('div', 'wk-edit-row');
+        const save = el('button', 'btn primary', 'Save'); save.style.cssText = 'padding:6px 14px;font-size:12px;';
+        save.addEventListener('click', () => {
+          const text = dDraft.trim();
+          dSummary = text ? { text, edited: true, basis: ntkBasis() } : null;
+          dSave(); dEditing = false; render();
+        });
+        const cancel = el('button', 'btn ghost', 'Cancel'); cancel.style.cssText = 'padding:6px 14px;font-size:12px;';
+        cancel.addEventListener('click', () => { dEditing = false; render(); });
+        row.appendChild(save); row.appendChild(cancel); box.appendChild(row);
+        ntkBody.appendChild(box);
+        setTimeout(() => { const t = ntkBody.querySelector('textarea'); if (t) t.focus(); }, 0);
+      } else if (dSummary && dSummary.text) {
+        const box = el('div', 'ntk-sum', `<span class="ai-tag${dSummary.edited ? ' edited' : ''}">${dSummary.edited ? 'Edited' : 'AI summary'}</span>${escapeHtml(dSummary.text)}`);
+        if (dSummary.basis !== ntkBasis()) box.appendChild(el('div', 'ntk-stale', 'The points have changed since this summary was written.'));
+        const edit = el('button', 'wk-link', 'Edit');
+        edit.addEventListener('click', () => { dEditing = true; dDraft = dSummary.text; render(); });
+        box.appendChild(edit);
+        ntkBody.appendChild(box);
+      } else {
+        const box = el('div', 'ntk-sum pending', dBusy ? 'Summarising…' : 'No summary yet. ');
+        if (!dBusy) {
+          const write = el('button', 'wk-link', 'Write my own');
+          write.style.display = 'inline-block';
+          write.addEventListener('click', () => { dEditing = true; dDraft = ''; render(); });
+          box.appendChild(write);
+        }
+        ntkBody.appendChild(box);
+      }
+      if (dError) ntkBody.appendChild(el('div', 'ntk-err', `⚠️ AI summary unavailable (${escapeHtml(dError)}). The points are listed below.`));
       current.needToKnow.forEach(item => {
         const row = el('div', 'ntk-line');
         row.innerHTML = `<span class="ntk-section">${escapeHtml(item.section)}</span><span class="ntk-label">${escapeHtml(item.label)}:</span> <span class="ntk-value">${escapeHtml(item.value)}</span>`;
@@ -883,6 +973,7 @@
               <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">EXECUTIVE SUMMARY</td>
             </tr></table>
           </td></tr>
+          ${dSummary && dSummary.text ? `<tr><td style="padding:2px 14px 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#F4F6F7;border:1px solid #DDE1E4;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>` : ''}
           <tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>
         </table>
       </td></tr>` : '';
@@ -930,6 +1021,7 @@
     const lines = [current.tabName, ''];
     if (current.needToKnow && current.needToKnow.length) {
       lines.push('EXECUTIVE SUMMARY');
+      if (dSummary && dSummary.text) { lines.push('  ' + dSummary.text); lines.push(''); }
       current.needToKnow.forEach(item => lines.push(`  - [${item.section}] ${item.label}: ${item.value}`));
       lines.push('');
     }
