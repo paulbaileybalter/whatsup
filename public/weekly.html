@@ -654,7 +654,50 @@
         </table>
       </td></tr>`;
   }
-  function buildEmailHtml() {
+  // Gmail strips SVG, so the gauge is drawn to a PNG for the email.
+  function fermenterPng() {
+    return new Promise(resolve => {
+      try {
+        const svg = fermenterSvg(prod.litres / prod.target).replace('role="img"', 'role="img" style="background:#fff"');
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const c = document.createElement('canvas'); c.width = 520; c.height = 720;
+            const ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0, 520, 720);
+            resolve(c.toDataURL('image/png'));
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      } catch (e) { resolve(null); }
+    });
+  }
+  function emailGauge(png) {
+    if (!(prod.litres > 0)) return '';
+    const pct = prod.litres / prod.target * 100;
+    const pctText = pct >= 100 ? '100' : pct.toFixed(1);
+    const over = prod.litres >= prod.target ? `<tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0d6a4d;">&#127881; Target reached${prod.litres > prod.target ? ' &mdash; ' + fmtL(prod.litres - prod.target) + ' L over' : ''}</td></tr>` : '';
+    return `
+      <tr><td style="height:16px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;">
+          <tr>
+            ${png ? `<td width="150" valign="middle" align="center" style="padding:10px 6px 10px 14px;vertical-align:middle;"><img src="${png}" width="130" height="180" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:130px;height:180px;"></td>` : ''}
+            <td valign="middle" style="padding:10px 16px;vertical-align:middle;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</td></tr>
+                <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:40px;line-height:1.1;color:#14161a;padding-top:4px;">${pctText}<span style="font-size:18px;color:#0d6a4d;">%</span></td></tr>
+                <tr><td style="font-family:'Courier New',Courier,monospace;font-size:12px;color:#55585F;padding-top:4px;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of <b style="color:#14161a;">${fmtL(prod.target)}</b> litres packaged</td></tr>
+                <tr><td style="font-family:'Courier New',Courier,monospace;font-size:12px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</td></tr>
+                ${over}
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td></tr>`;
+  }
+  function buildEmailHtml(gaugePng) {
     const covered = weekData.days.filter(d => d.tabName).map(d => d.label).join(', ') || 'none';
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:16px;max-width:900px;width:100%;">
       <tr><td style="padding:16px 20px;">
@@ -672,6 +715,7 @@
             </tr></table>
           </td></tr>
           <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
+          ${emailGauge(gaugePng)}
           ${weekData.sections.filter(sc => visibleItems(sc).length).map(emailSection).join('')}
         </table>
       </td></tr>
@@ -679,6 +723,7 @@
   }
   function buildEmailPlainText() {
     const lines = [`WEEKLY OPS — ${rangeText()}`, ''];
+    if (prod.litres > 0) { lines.push(`ANNUAL PRODUCTION TARGET: ${(Math.min(100, prod.litres / prod.target * 100)).toFixed(1)}% — ${fmtL(prod.litres)} of ${fmtL(prod.target)} L packaged (remaining ${fmtL(Math.max(0, prod.target - prod.litres))} L)`); lines.push(''); }
     weekData.sections.filter(sc => visibleItems(sc).length).forEach(sec => {
       lines.push(sec.title.toUpperCase());
       if (summaryText(sec.title)) lines.push(`  Week summary: ${summaryText(sec.title)}`);
@@ -713,7 +758,8 @@
   }
   async function exportEmail() {
     if (!weekData || !weekData.sections.some(sc => visibleItems(sc).length)) { showToast('Nothing to export yet'); return false; }
-    const html = buildEmailHtml(), text = buildEmailPlainText();
+    const png = prod.litres > 0 ? await fermenterPng() : null;
+    const html = buildEmailHtml(png), text = buildEmailPlainText();
     try {
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
@@ -726,14 +772,15 @@
   }
 
   // ---------------- Annual production target (fermenter gauge) ----------------
-  const DEFAULT_TARGET_L = 13000000;
+  const DEFAULT_TARGET_L = 14000000;
   const PROD_KEY = 'balter_prod_packaged_v1';
   const TANK_TOP = 30, TANK_BOT = 290, TANK_H = TANK_BOT - TANK_TOP;
   let prod = (function () {
     try { const x = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); if (x && isFinite(x.litres)) return x; } catch (e) {}
     return { litres: 0, updated: null };
   })();
-  if (!(prod.target > 0)) prod.target = DEFAULT_TARGET_L;
+  // the target only sticks if you changed it yourself; otherwise it follows the default
+  if (!prod.targetSet || !(prod.target > 0)) { prod.target = DEFAULT_TARGET_L; prod.targetSet = false; }
   const saveProd = () => { try { localStorage.setItem(PROD_KEY, JSON.stringify(prod)); } catch (e) {} };
   const fmtL = n => Math.round(n).toLocaleString('en-AU');
   function parseLitres(str) {
@@ -745,9 +792,11 @@
     for (let x = -period; x < width + period; x += period) d += ` q ${period / 4} -${amp} ${period / 2} 0 t ${period / 2} 0`;
     return d + ` V ${TANK_BOT + 60} H -${period} Z`;
   }
-  function fermenterSvg() {
+  function fermenterSvg(staticPct) {
+    const isStatic = typeof staticPct === 'number';
+    const liquidOffset = isStatic ? (1 - Math.min(1, Math.max(0, staticPct))) * TANK_H : TANK_H;
     const shape = 'M50,74 Q50,34 110,30 Q170,34 170,74 L170,222 L122,290 L98,290 L50,222 Z';
-    return `<svg viewBox="0 0 260 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fermenter showing progress to the annual production target">
+    return `<svg viewBox="0 0 260 360"${isStatic ? ' width="520" height="720"' : ''} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fermenter showing progress to the annual production target">
       <defs>
         <clipPath id="tankClip"><path d="${shape}"/></clipPath>
         <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5CE3BA"/><stop offset="1" stop-color="#36C49A"/></linearGradient>
@@ -762,7 +811,7 @@
       <path d="${shape}" fill="url(#steel)"/>
       <g clip-path="url(#tankClip)">
         <rect x="40" y="${TANK_TOP}" width="140" height="${TANK_H + 10}" fill="#f4f6f7"/>
-        <g class="liquid" id="liquidGroup" style="transform: translateY(${TANK_H}px);">
+        <g class="liquid" id="liquidGroup" ${isStatic ? `transform="translate(0 ${liquidOffset})"` : `style="transform: translateY(${TANK_H}px);"`}>
           <g class="wave-b" opacity=".55"><path d="${wavePath(TANK_TOP - 1, 4, 60, 260)}" fill="#7CEBCB"/></g>
           <g class="wave-a"><path d="${wavePath(TANK_TOP + 2, 4, 60, 260)}" fill="url(#liqGrad)"/></g>
           <circle cx="82" cy="200" r="3" fill="#fff" opacity=".45"/><circle cx="130" cy="240" r="2.4" fill="#fff" opacity=".4"/><circle cx="104" cy="260" r="2" fill="#fff" opacity=".4"/><circle cx="148" cy="180" r="2.6" fill="#fff" opacity=".4"/>
@@ -812,10 +861,10 @@
     };
     const tInput = card.querySelector('#prodTargetInput');
     tInput.value = fmtL(prod.target);
-    tInput.addEventListener('input', () => { const n = parseLitres(tInput.value); if (n > 0) { prod.target = n; upd(); } });
+    tInput.addEventListener('input', () => { const n = parseLitres(tInput.value); if (n > 0) { prod.target = n; prod.targetSet = true; upd(); } });
     tInput.addEventListener('change', () => {
       const n = parseLitres(tInput.value);
-      if (n > 0) prod.target = n;
+      if (n > 0) { prod.target = n; prod.targetSet = true; }
       prod.updated = new Date().toISOString(); saveProd();
       tInput.value = fmtL(prod.target); upd();
     });

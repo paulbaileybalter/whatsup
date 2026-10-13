@@ -43,4 +43,4 @@ not just static assets.
 
 AI summaries are written only from the text typed into each point (plus its section name and day); the sheet's field/prompt names are never sent to the AI.
 
-Weekly Ops also has an annual production gauge (fermenter graphic, default target 13,000,000 L, editable on the page). The packaged-to-date litres are typed into the field and saved in that browser.
+Weekly Ops also has an annual production gauge (fermenter graphic, default target 14,000,000 L, editable on the page; shown in the weekly email as a PNG image of the fermenter). The packaged-to-date litres are typed into the field and saved in that browser.
