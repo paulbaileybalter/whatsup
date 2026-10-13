@@ -123,6 +123,7 @@ const SUMMARY_SYSTEM = [
   "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
+  "Refer to each area as a team, e.g. \"the Safety Team\", \"the QC Team\", \"the Brew & Cellar Team\". Never call it a section, tile, field or area.",
 ].join(' ');
 
 const SUMMARY_SYSTEM_DAILY = [
@@ -131,6 +132,7 @@ const SUMMARY_SYSTEM_DAILY = [
   "Lead with what matters most; mention wins briefly if there are any. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
+  "Refer to each area as a team, e.g. \"the Safety Team\", \"the QC Team\", \"the Brew & Cellar Team\". Never call it a section, tile, field or area.",
 ].join(' ');
 
 function sectionPrompt(sec, mode) {
@@ -138,7 +140,8 @@ function sectionPrompt(sec, mode) {
     return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}] ${i.value}`).join('\n');
   }
   const lines = sec.items.map(i => `- ${i.dayLabel}: ${i.value}`); // field names are deliberately left out
-  return `Section: ${sec.title}\nPoints:\n${lines.join('\n')}`;
+  const team = sec.title.replace(/\s+Updates$/i, '');
+  return `Team: the ${team} Team\nPoints:\n${lines.join('\n')}`;
 }
 
 async function summariseOne(env, sec, mode) {
