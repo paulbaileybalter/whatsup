@@ -170,7 +170,9 @@ async function callLLM(env, system, prompt, maxTokens) {
           messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
           max_tokens: maxTokens,
         });
-        const text = String((out && (out.response || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content))) || '').trim();
+        let raw = out && (out.response || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content));
+        if (raw && typeof raw === 'object') raw = JSON.stringify(raw); // Workers AI can return already-parsed JSON
+        const text = String(raw || '').trim();
         if (text) return text;
         lastErr = new Error('Empty response from ' + model);
       } catch (e) { lastErr = e; }
@@ -227,7 +229,7 @@ const NL_COMMON = [
 const NL_TASKS = {
   legend: {
     system: NL_COMMON + ' Task: shortlist candidates for "Balter Legend of the Month". Look at every mention of an employee and pick the 3 to 6 people whose mentions show real accomplishments, going above and beyond, helping others, solving problems, learning or milestones. Ignore people mentioned only in passing (for example being on leave) or only in a negative context. Reply with JSON only, in this exact shape: {"candidates":[{"name":"First Last or first name as written","mentions":3,"why":"one or two sentences on what they did","evidence":["short paraphrase of up to 3 specific points"]}]}. Order the strongest candidate first.',
-    json: true, tokens: 1200,
+    json: true, tokens: 2000,
     prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
   },
   month: {
@@ -242,21 +244,35 @@ const NL_TASKS = {
   },
   topics: {
     system: NL_COMMON + ' Task: suggest 6 to 9 topics for the "Around the Brewery" section of the newsletter. Each topic should be an event or accomplishment, drawn from different teams and employees where possible, that staff would enjoy reading about. Do not suggest dull routine operations. Reply with JSON only, in this exact shape: {"topics":[{"title":"short headline of up to 6 words","team":"TEAM LABEL IN CAPITALS such as SAFETY, COMMUNITY, PLANNING & LOGISTICS","blurb":"one sentence on what happened"}]}.',
-    json: true, tokens: 1200,
+    json: true, tokens: 2000,
     prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
   },
   topic: {
     system: NL_COMMON + ' Task: write one "Around the Brewery" newsletter item about the chosen topic, using only the points that relate to it. Lead with the news, then thank the people involved by name where the points name them. Body about 70 words (60 to 80), plain prose with no bullets or markdown. Reply with JSON only, in this exact shape: {"team":"TEAM LABEL IN CAPITALS","headline":"short headline of up to 6 words","body":"the item"}.',
-    json: true, tokens: 700,
+    json: true, tokens: 1200,
     prompt: (b, pts) => `Month: ${b.month}\nChosen topic: ${b.topic.title}${b.topic.blurb ? ' - ' + b.topic.blurb : ''}${b.topic.team ? ' (team: ' + b.topic.team + ')' : ''}\nPoints:\n${pts}`,
   },
 };
 
 function extractJson(text) {
-  const t = String(text || '');
-  const s = t.indexOf('{'), e = t.lastIndexOf('}');
-  if (s < 0 || e <= s) return null;
-  try { return JSON.parse(t.slice(s, e + 1)); } catch (err) { return null; }
+  const t = String(text || '').replace(/```(?:json)?/gi, '');
+  const s = t.indexOf('{');
+  if (s < 0) return null;
+  const e = t.lastIndexOf('}');
+  if (e > s) { try { return JSON.parse(t.slice(s, e + 1)); } catch (err) { /* try repair below */ } }
+  // Repair output cut off mid-way: walk the text, drop the unfinished tail, close open brackets.
+  let stack = [], inStr = false, esc = false, lastGood = -1, snap = [];
+  for (let i = s; i < t.length; i++) {
+    const c = t[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true;
+    else if (c === '{' || c === '[') stack.push(c);
+    else if (c === '}' || c === ']') { stack.pop(); }
+    if (c === '}' ) { lastGood = i; snap = stack.slice(); }
+  }
+  if (lastGood < 0) return null;
+  const close = snap.reverse().map(c => c === '{' ? '}' : ']').join('');
+  try { return JSON.parse(t.slice(s, lastGood + 1) + close); } catch (err) { return null; }
 }
 
 async function handleNewsletter(request, env) {
