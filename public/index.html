@@ -16,7 +16,7 @@
   #app {
     --mint: #47D7AC; --mint-ink: #0d6a4d; --apricot: #FDAA63; --purple: #7566A0;
     --sky: #99D6EA; --gold: #FFD637; --pale: #F1EB9C; --indigo: #8C93D8;
-    --leaf: #8BC48A; --coral: #F2937D; --violet: #B295D1; --slate: #6C7A89;
+    --leaf: #8BC48A; --coral: #F2937D; --violet: #B295D1; --slate: #6C7A89; --xpa: #47D7AC;
     --red: #e56659; --red-10: #fdeceb;
 
     --safety: var(--mint); --qc: var(--purple); --brew: var(--sky); --packaging: var(--apricot);
@@ -99,6 +99,9 @@
   .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card .card-head .tabicon { background: var(--slate); }
+  .ntk-card.exec { border-left-color: var(--xpa); }
+  .ntk-card.exec .card-head .tabicon { background: var(--xpa); }
+  .ntk-card.exec .ntk-sum { background: #EDFAF6; border-color: rgba(71,215,172,.45); }
   .ntk-sum { background: #F4F6F7; border: 1px solid rgba(108,122,137,.3); border-radius: var(--radius-md); padding: 10px 12px; font-size: 13px; line-height: 1.5; color: var(--ink); }
   .ntk-sum.pending { color: var(--muted); font-style: italic; }
   .ai-tag { display: inline-block; background: var(--mint); color: var(--ink); font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 5px; padding: 1px 6px; margin-right: 8px; font-style: normal; }
@@ -647,7 +650,7 @@
 
     // Executive Summary — AI-written from the Key Points and the Wins
     if (execInputs().length) {
-      const ntkCard = el('div', 'ntk-card');
+      const ntkCard = el('div', 'ntk-card exec');
       const ntkHead = el('div', 'card-head', `<span class="tabicon">🎯</span><span>EXECUTIVE SUMMARY</span>`);
       const redo = el('button', 'wk-btn', dBusy ? '…' : '↻ Redo summary');
       redo.title = 'Write a new AI summary of today\'s points';
@@ -979,21 +982,21 @@
         <span style="display:inline-block;background:#6C7A89;color:#ffffff;font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;">${escHtml(item.section)}</span>
         ${escHtml(item.value)}
       </td></tr>`).join('');
-    const emailCard = (title, icon, rowsHtml) => `
+    const emailCard = (title, icon, rowsHtml, accent, tint) => {accent = accent || '#6C7A89'; return `
       <tr><td style="height:14px;"></td></tr>
       <tr><td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #6C7A89;border-radius:8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid ${accent};border-radius:8px;">
           <tr><td style="padding:8px 9px 6px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="width:22px;height:22px;background:#6C7A89;border-radius:6px;text-align:center;font-size:11px;line-height:22px;">${icon}</td>
+              <td style="width:22px;height:22px;background:${accent};border-radius:6px;text-align:center;font-size:11px;line-height:22px;">${icon}</td>
               <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">${title}</td>
             </tr></table>
           </td></tr>
           ${rowsHtml}
         </table>
-      </td></tr>`;
+      </td></tr>`; };
     const execBlock = dSummary && dSummary.text ? emailCard('EXECUTIVE SUMMARY', '&#127919;',
-      `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#F4F6F7;border:1px solid #DDE1E4;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`) : '';
+      `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#EDFAF6;border:1px solid #B5EBDC;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`, '#47D7AC') : '';
     const keyBlock = ntkItems ? emailCard('KEY POINTS', '&#128204;',
       `<tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>`) : '';
     const ntkBlock = execBlock + keyBlock;
