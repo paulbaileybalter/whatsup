@@ -14,7 +14,7 @@ setup steps. Quick reference:
   daily one). Each tile can redo its own AI summary, summaries can be edited by hand,
   and individual points can be removed (and restored); edits and removals are saved in
   that browser per week and are reflected in the email. Days without a tab (e.g. weekends) are skipped and shown as "no tab".
-- The daily page's Executive Summary card has the same AI summary (redo / edit), saved per day in the browser, and included in the handover email above the listed points.
+- The daily page's Executive Summary card is an AI summary (redo / edit) written from the Key Points and the Wins, saved per day in the browser and included in the handover email. The ticked sheet rows are listed in the Key Points card below it.
 - `POST /api/summarize` — password-gated Worker route that writes the AI summaries.
   By default it uses Workers AI via the `AI` binding in `wrangler.jsonc` (no key needed).
   To use Claude instead, add a Worker Secret `ANTHROPIC_API_KEY` (optionally a Text

@@ -484,16 +484,22 @@
   let dSummary = null, dLoadedFor = null, dBusy = false, dError = '', dEditing = false, dDraft = '';
   function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0); }
   const dKey = () => 'daily_ai_v1_' + current.tabName;
-  const ntkBasis = () => hashStr((current.needToKnow || []).map(i => i.section + '|' + i.label + '|' + i.value).join('\n'));
+  const winsList = () => [...current.winsLeft, ...current.winsRight].filter(Boolean);
+  // The Executive Summary is written from both the Key Points (ticked rows) and the Wins.
+  const execInputs = () => [
+    ...(current.needToKnow || []).map(i => ({ dayLabel: i.section, label: i.label, value: i.value })),
+    ...winsList().map(w => ({ dayLabel: 'Win', label: '', value: w })),
+  ];
+  const ntkBasis = () => hashStr(execInputs().map(i => i.dayLabel + '|' + i.label + '|' + i.value).join('\n'));
   function dSave() { try { if (dSummary) localStorage.setItem(dKey(), JSON.stringify(dSummary)); else localStorage.removeItem(dKey()); } catch (e) {} }
   async function generateDailySummary() {
-    if (dBusy || !current || !(current.needToKnow || []).length) return;
+    if (dBusy || !current || !execInputs().length) return;
     const forTab = current.tabName;
     dBusy = true; dError = ''; render();
     try {
       const res = await fetch('/api/summarize', {
         method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'daily', sections: [{ title: 'Executive Summary', items: current.needToKnow.map(i => ({ dayLabel: i.section, label: i.label, value: i.value })) }] }),
+        body: JSON.stringify({ mode: 'daily', sections: [{ title: 'Executive Summary', items: execInputs() }] }),
       });
       if (res.redirected || res.status === 401) { location.href = '/login'; return; }
       const data = await res.json().catch(() => ({}));
@@ -509,7 +515,7 @@
     if (!current || dLoadedFor === current.tabName) return;
     dLoadedFor = current.tabName; dSummary = null; dError = ''; dEditing = false;
     try { const x = JSON.parse(localStorage.getItem(dKey()) || 'null'); if (x && x.text) dSummary = x; } catch (e) {}
-    if (!dSummary && (current.needToKnow || []).length) setTimeout(generateDailySummary, 0);
+    if (!dSummary && execInputs().length) setTimeout(generateDailySummary, 0);
   }
 
   function fmtSyncTime(iso) {
@@ -562,7 +568,7 @@
     const ymd = activeDate.getFullYear() + '-' + String(activeDate.getMonth() + 1).padStart(2, '0') + '-' + String(activeDate.getDate()).padStart(2, '0');
     weeklyBtn.href = '/weekly.html?date=' + ymd;
     weeklyBtn.className = 'btn ghost weekly-btn';
-    weeklyBtn.textContent = 'Weekly Executive Summary';
+    weeklyBtn.textContent = 'Weekly Ops';
     topbar.appendChild(weeklyBtn);
 
     // MIDDLE: calendar picker + date + refresh, grouped and centered
@@ -638,8 +644,8 @@
     });
     frame.appendChild(kpiGrid);
 
-    // need to know — flagged rows from the sheet's "Need to Know" checkbox column
-    if (current.needToKnow && current.needToKnow.length) {
+    // Executive Summary — AI-written from the Key Points and the Wins
+    if (execInputs().length) {
       const ntkCard = el('div', 'ntk-card');
       const ntkHead = el('div', 'card-head', `<span class="tabicon">🎯</span><span>EXECUTIVE SUMMARY</span>`);
       const redo = el('button', 'wk-btn', dBusy ? '…' : '↻ Redo summary');
@@ -688,13 +694,22 @@
         ntkBody.appendChild(box);
       }
       if (dError) ntkBody.appendChild(el('div', 'ntk-err', `⚠️ AI summary unavailable (${escapeHtml(dError)}). The points are listed below.`));
+      ntkCard.appendChild(ntkBody);
+      frame.appendChild(ntkCard);
+    }
+
+    // Key Points — flagged rows from the sheet's "Need to Know" checkbox column
+    if (current.needToKnow && current.needToKnow.length) {
+      const kpCard = el('div', 'ntk-card');
+      kpCard.appendChild(el('div', 'card-head', `<span class="tabicon">📌</span><span>KEY POINTS</span>`));
+      const kpBody = el('div', 'ntk-body');
       current.needToKnow.forEach(item => {
         const row = el('div', 'ntk-line');
         row.innerHTML = `<span class="ntk-section">${escapeHtml(item.section)}</span><span class="ntk-label">${escapeHtml(item.label)}:</span> <span class="ntk-value">${escapeHtml(item.value)}</span>`;
-        ntkBody.appendChild(row);
+        kpBody.appendChild(row);
       });
-      ntkCard.appendChild(ntkBody);
-      frame.appendChild(ntkCard);
+      kpCard.appendChild(kpBody);
+      frame.appendChild(kpCard);
     }
 
     // wins
@@ -963,20 +978,24 @@
         <span style="display:inline-block;background:#6C7A89;color:#ffffff;font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;">${escHtml(item.section)}</span>
         <b>${escHtml(item.label)}:</b> ${escHtml(item.value)}
       </td></tr>`).join('');
-    const ntkBlock = ntkItems ? `
+    const emailCard = (title, icon, rowsHtml) => `
       <tr><td style="height:14px;"></td></tr>
       <tr><td>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #6C7A89;border-radius:8px;">
           <tr><td style="padding:8px 9px 6px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="width:22px;height:22px;background:#6C7A89;border-radius:6px;text-align:center;font-size:11px;line-height:22px;">&#127919;</td>
-              <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">EXECUTIVE SUMMARY</td>
+              <td style="width:22px;height:22px;background:#6C7A89;border-radius:6px;text-align:center;font-size:11px;line-height:22px;">${icon}</td>
+              <td style="padding-left:8px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:11.5px;color:#14161a;">${title}</td>
             </tr></table>
           </td></tr>
-          ${dSummary && dSummary.text ? `<tr><td style="padding:2px 14px 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#F4F6F7;border:1px solid #DDE1E4;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>` : ''}
-          <tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>
+          ${rowsHtml}
         </table>
-      </td></tr>` : '';
+      </td></tr>`;
+    const execBlock = dSummary && dSummary.text ? emailCard('EXECUTIVE SUMMARY', '&#127919;',
+      `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#F4F6F7;border:1px solid #DDE1E4;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`) : '';
+    const keyBlock = ntkItems ? emailCard('KEY POINTS', '&#128204;',
+      `<tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>`) : '';
+    const ntkBlock = execBlock + keyBlock;
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:16px;max-width:900px;width:100%;">
       <tr><td style="padding:16px 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -1019,9 +1038,9 @@
 
   function buildEmailPlainText() {
     const lines = [current.tabName, ''];
+    if (dSummary && dSummary.text) { lines.push('EXECUTIVE SUMMARY'); lines.push('  ' + dSummary.text); lines.push(''); }
     if (current.needToKnow && current.needToKnow.length) {
-      lines.push('EXECUTIVE SUMMARY');
-      if (dSummary && dSummary.text) { lines.push('  ' + dSummary.text); lines.push(''); }
+      lines.push('KEY POINTS');
       current.needToKnow.forEach(item => lines.push(`  - [${item.section}] ${item.label}: ${item.value}`));
       lines.push('');
     }
