@@ -146,11 +146,21 @@ async function summariseOne(env, sec) {
     return ((data.content || []).map(b => b.text || '').join('')).trim();
   }
   if (env.AI) {
-    const out = await env.AI.run(env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct', {
-      messages: [{ role: 'system', content: SUMMARY_SYSTEM }, { role: 'user', content: prompt }],
-      max_tokens: 400,
-    });
-    return String((out && out.response) || '').trim();
+    // Workers AI retires models from time to time, so try a short list in order.
+    const models = [env.AI_MODEL, '@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/meta/llama-3.1-8b-instruct-fp8', '@cf/meta/llama-3.2-3b-instruct'].filter(Boolean);
+    let lastErr;
+    for (const model of models) {
+      try {
+        const out = await env.AI.run(model, {
+          messages: [{ role: 'system', content: SUMMARY_SYSTEM }, { role: 'user', content: prompt }],
+          max_tokens: 400,
+        });
+        const text = String((out && (out.response || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content))) || '').trim();
+        if (text) return text;
+        lastErr = new Error('Empty response from ' + model);
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('Workers AI failed');
   }
   throw new Error('No AI provider configured');
 }
