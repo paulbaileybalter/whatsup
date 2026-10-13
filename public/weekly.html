@@ -205,6 +205,31 @@
   .empty-state .big { font-size: 34px; margin-bottom: 8px; }
   @media (max-width: 1000px) { .day-strip { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 800px) { .weekly-grid { grid-template-columns: 1fr; } }
+  .prod-card { display: flex; gap: 28px; align-items: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--mint); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 26px; margin-bottom: 14px; }
+  .prod-tank { flex: 0 0 auto; width: 190px; }
+  .prod-tank svg { width: 100%; height: auto; display: block; }
+  .prod-info { flex: 1; min-width: 0; }
+  .prod-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .prod-pct { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1.05; color: var(--ink); margin: 4px 0 2px; }
+  .prod-pct small { font-size: 22px; color: var(--mint-ink); margin-left: 2px; }
+  .prod-line { font-family: var(--font-data); font-size: 13px; color: var(--ink-soft); }
+  .prod-line b { color: var(--ink); }
+  .prod-msg { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--mint-ink); min-height: 18px; }
+  .prod-fields { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  .prod-fields .prod-field { margin-top: 0; flex: 1 1 200px; }
+  .prod-field { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
+  .prod-field label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .prod-input-wrap { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; padding: 0 12px; }
+  .prod-input-wrap:focus-within { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(71,215,172,.25); }
+  .prod-input-wrap input { border: none; outline: none; flex: 1; min-width: 0; padding: 10px 0; font-family: var(--font-data); font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
+  .prod-input-wrap span { font-family: var(--font-data); font-size: 13px; color: var(--muted); }
+  .prod-updated { font-size: 11.5px; color: var(--muted); }
+  .wave-a { animation: waveMove 5s linear infinite; }
+  .wave-b { animation: waveMove 8s linear infinite reverse; }
+  @keyframes waveMove { to { transform: translateX(-60px); } }
+  .liquid { transition: transform 1s cubic-bezier(.4,.1,.2,1); }
+  @media (prefers-reduced-motion: reduce) { .wave-a, .wave-b { animation: none; } .liquid { transition: none; } }
+  @media (max-width: 600px) { .prod-card { flex-direction: column; text-align: center; } .prod-field { margin-left: auto; margin-right: auto; } }
 </style>
 <script>
 (function () {
@@ -700,6 +725,117 @@
     return false;
   }
 
+  // ---------------- Annual production target (fermenter gauge) ----------------
+  const DEFAULT_TARGET_L = 13000000;
+  const PROD_KEY = 'balter_prod_packaged_v1';
+  const TANK_TOP = 30, TANK_BOT = 290, TANK_H = TANK_BOT - TANK_TOP;
+  let prod = (function () {
+    try { const x = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); if (x && isFinite(x.litres)) return x; } catch (e) {}
+    return { litres: 0, updated: null };
+  })();
+  if (!(prod.target > 0)) prod.target = DEFAULT_TARGET_L;
+  const saveProd = () => { try { localStorage.setItem(PROD_KEY, JSON.stringify(prod)); } catch (e) {} };
+  const fmtL = n => Math.round(n).toLocaleString('en-AU');
+  function parseLitres(str) {
+    const n = parseFloat(String(str || '').replace(/[^0-9.]/g, ''));
+    return isFinite(n) ? Math.round(n) : 0;
+  }
+  function wavePath(y, amp, period, width) {
+    let d = `M-${period} ${y}`;
+    for (let x = -period; x < width + period; x += period) d += ` q ${period / 4} -${amp} ${period / 2} 0 t ${period / 2} 0`;
+    return d + ` V ${TANK_BOT + 60} H -${period} Z`;
+  }
+  function fermenterSvg() {
+    const shape = 'M50,74 Q50,34 110,30 Q170,34 170,74 L170,222 L122,290 L98,290 L50,222 Z';
+    return `<svg viewBox="0 0 260 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fermenter showing progress to the annual production target">
+      <defs>
+        <clipPath id="tankClip"><path d="${shape}"/></clipPath>
+        <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5CE3BA"/><stop offset="1" stop-color="#36C49A"/></linearGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa1a8"/><stop offset=".35" stop-color="#e9ecee"/><stop offset=".7" stop-color="#c3c8cc"/><stop offset="1" stop-color="#8d949b"/></linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset=".25" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#000000" stop-opacity=".10"/></linearGradient>
+      </defs>
+      <rect x="62" y="236" width="9" height="104" rx="2" fill="#8d949b"/><rect x="149" y="236" width="9" height="104" rx="2" fill="#8d949b"/>
+      <rect x="54" y="336" width="25" height="7" rx="3" fill="#6f767d"/><rect x="141" y="336" width="25" height="7" rx="3" fill="#6f767d"/>
+      <rect x="64" y="286" width="92" height="6" rx="3" fill="#a9afb5"/>
+      <rect x="104" y="10" width="12" height="24" rx="3" fill="#a9afb5"/><rect x="98" y="6" width="24" height="8" rx="3" fill="#8d949b"/>
+      <path d="M72 40 h-34" stroke="#a9afb5" stroke-width="6" stroke-linecap="round"/><circle cx="30" cy="40" r="9" fill="#fff" stroke="#8d949b" stroke-width="3"/><path d="M30 40 L34 35" stroke="#14161a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="${shape}" fill="url(#steel)"/>
+      <g clip-path="url(#tankClip)">
+        <rect x="40" y="${TANK_TOP}" width="140" height="${TANK_H + 10}" fill="#f4f6f7"/>
+        <g class="liquid" id="liquidGroup" style="transform: translateY(${TANK_H}px);">
+          <g class="wave-b" opacity=".55"><path d="${wavePath(TANK_TOP - 1, 4, 60, 260)}" fill="#7CEBCB"/></g>
+          <g class="wave-a"><path d="${wavePath(TANK_TOP + 2, 4, 60, 260)}" fill="url(#liqGrad)"/></g>
+          <circle cx="82" cy="200" r="3" fill="#fff" opacity=".45"/><circle cx="130" cy="240" r="2.4" fill="#fff" opacity=".4"/><circle cx="104" cy="260" r="2" fill="#fff" opacity=".4"/><circle cx="148" cy="180" r="2.6" fill="#fff" opacity=".4"/>
+        </g>
+        <path d="${shape}" fill="url(#glass)"/>
+      </g>
+      <path d="M50 112 H170 M50 178 H170" stroke="#6f767d" stroke-width="3" opacity=".55"/>
+      <ellipse cx="148" cy="146" rx="13" ry="16" fill="none" stroke="#6f767d" stroke-width="3"/>
+      <path d="${shape}" fill="none" stroke="#6f767d" stroke-width="5" stroke-linejoin="round"/>
+      ${[25, 50, 75, 100].map(p => { const y = TANK_BOT - TANK_H * p / 100; return `<path d="M176 ${y} h12" stroke="#9a9da3" stroke-width="2"/><text x="194" y="${y + 4}" font-family="JetBrains Mono, monospace" font-size="12" fill="#6b6f76">${p}%</text>`; }).join('')}
+    </svg>`;
+  }
+  function buildProductionCard() {
+    const card = el('div', 'prod-card');
+    card.innerHTML = `
+      <div class="prod-tank">${fermenterSvg()}</div>
+      <div class="prod-info">
+        <div class="prod-kicker">Annual production target</div>
+        <div class="prod-pct"><span id="prodPct">0</span><small>%</small></div>
+        <div class="prod-line"><b id="prodDone">0</b> of <b id="prodTarget"></b> litres packaged</div>
+        <div class="prod-line">Remaining: <b id="prodLeft"></b> L</div>
+        <div class="prod-msg" id="prodMsg"></div>
+        <div class="prod-fields">
+        <div class="prod-field">
+          <label for="prodTargetInput">Annual target (litres)</label>
+          <div class="prod-input-wrap"><input id="prodTargetInput" type="text" inputmode="numeric" autocomplete="off"><span>L</span></div>
+        </div>
+        <div class="prod-field">
+          <label for="prodInput">Packaged total so far (litres)</label>
+          <div class="prod-input-wrap"><input id="prodInput" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 6,500,000"><span>L</span></div>
+        </div>
+        </div>
+        <div class="prod-updated" id="prodUpdated" style="margin-top:8px;"></div>
+      </div>`;
+    const input = card.querySelector('#prodInput');
+    const g = card.querySelector('#liquidGroup');
+    const upd = () => {
+      const pct = Math.min(1, Math.max(0, prod.litres / prod.target));
+      g.style.transform = `translateY(${(1 - pct) * TANK_H}px)`;
+      const shown = prod.litres / prod.target * 100;
+      card.querySelector('#prodPct').textContent = shown >= 100 ? '100' : shown.toFixed(1);
+      card.querySelector('#prodDone').textContent = fmtL(prod.litres);
+      card.querySelector('#prodTarget').textContent = fmtL(prod.target);
+      card.querySelector('#prodLeft').textContent = fmtL(Math.max(0, prod.target - prod.litres));
+      card.querySelector('#prodMsg').textContent = prod.litres >= prod.target ? '🎉 Target reached' + (prod.litres > prod.target ? ` — ${fmtL(prod.litres - prod.target)} L over` : '') : '';
+      card.querySelector('#prodUpdated').textContent = prod.updated ? 'Last updated ' + new Date(prod.updated).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Saved in this browser when you leave the field.';
+    };
+    const tInput = card.querySelector('#prodTargetInput');
+    tInput.value = fmtL(prod.target);
+    tInput.addEventListener('input', () => { const n = parseLitres(tInput.value); if (n > 0) { prod.target = n; upd(); } });
+    tInput.addEventListener('change', () => {
+      const n = parseLitres(tInput.value);
+      if (n > 0) prod.target = n;
+      prod.updated = new Date().toISOString(); saveProd();
+      tInput.value = fmtL(prod.target); upd();
+    });
+    tInput.addEventListener('keydown', e => { if (e.key === 'Enter') tInput.blur(); });
+    input.value = prod.litres ? fmtL(prod.litres) : '';
+    input.addEventListener('input', () => { prod.litres = parseLitres(input.value); upd(); });
+    input.addEventListener('change', () => {
+      prod.litres = parseLitres(input.value); prod.updated = new Date().toISOString();
+      saveProd();
+      input.value = prod.litres ? fmtL(prod.litres) : ''; upd();
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+    upd();
+    // start empty, then fill up to the current level
+    const level = g.style.transform;
+    g.style.transform = `translateY(${TANK_H}px)`;
+    requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transform = level; }));
+    return card;
+  }
+
   // ---------------- Rendering ----------------
   const REFRESH_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#47D7AC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/></svg>`;
   function render() {
@@ -758,6 +894,7 @@
       strip.appendChild(chip);
     });
     frame.appendChild(strip);
+    frame.appendChild(buildProductionCard());
 
     // AI status line
     const status = el('div', 'ai-status');
