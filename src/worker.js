@@ -119,7 +119,7 @@ function loginPageHtml(showError) {
 
 const SUMMARY_SYSTEM = [
   "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting for a weekly operations review.",
-  "You get one section (e.g. QC, Packaging) with dated points. Write a short plain-text summary of the week for that section: 2-4 sentences, Australian English.",
+  "You get one section (e.g. QC, Packaging) with dated points. Write a short, punchy plain-text summary of the week for that section: one or two short sentences and no more than 35 words, Australian English. Lead with the single most important thing, use active verbs and plain words, and cut filler such as \"this week\", \"it was noted that\" or \"the team continued to\".",
   "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
@@ -144,16 +144,15 @@ function sectionPrompt(sec, mode) {
   return `Team: the ${team} Team\nPoints:\n${lines.join('\n')}`;
 }
 
-async function summariseOne(env, sec, mode) {
-  const prompt = sectionPrompt(sec, mode);
-  const system = mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM;
+async function callLLM(env, system, prompt, maxTokens) {
+  maxTokens = maxTokens || 400;
   if (env.ANTHROPIC_API_KEY) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
-        max_tokens: 400, system,
+        max_tokens: maxTokens, system,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -169,7 +168,7 @@ async function summariseOne(env, sec, mode) {
       try {
         const out = await env.AI.run(model, {
           messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }],
-          max_tokens: 400,
+          max_tokens: maxTokens,
         });
         const text = String((out && (out.response || (out.choices && out.choices[0] && out.choices[0].message && out.choices[0].message.content))) || '').trim();
         if (text) return text;
@@ -179,6 +178,10 @@ async function summariseOne(env, sec, mode) {
     throw lastErr || new Error('Workers AI failed');
   }
   throw new Error('No AI provider configured');
+}
+
+async function summariseOne(env, sec, mode) {
+  return callLLM(env, mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM, sectionPrompt(sec, mode), mode === 'daily' ? 400 : 250);
 }
 
 async function handleSummarize(request, env) {
@@ -209,6 +212,90 @@ async function handleSummarize(request, env) {
   }));
   if (!Object.values(summaries).some(Boolean)) return json({ error: errors[0] || 'AI request failed' }, 502);
   return json({ summaries, partialErrors: errors });
+}
+
+// ---------------- Newsletter AI (/api/newsletter) ----------------
+// Works from the month's Key Points and Wins only (free text typed by the team).
+
+const NL_COMMON = [
+  "You help the Balter Brewing team (Gold Coast, Australia) write their monthly staff newsletter.",
+  "You are given the month's points from the daily 9AM meeting: Key Points and Wins, each with the team it came from and the day(s) it was raised.",
+  "Use only facts stated in the points. Never invent names, numbers, events, quotes or outcomes. Australian English. Warm, plain, positive newsletter tone.",
+  "Only name people who are explicitly named in the points.",
+].join(' ');
+
+const NL_TASKS = {
+  legend: {
+    system: NL_COMMON + ' Task: shortlist candidates for "Balter Legend of the Month". Look at every mention of an employee and pick the 3 to 6 people whose mentions show real accomplishments, going above and beyond, helping others, solving problems, learning or milestones. Ignore people mentioned only in passing (for example being on leave) or only in a negative context. Reply with JSON only, in this exact shape: {"candidates":[{"name":"First Last or first name as written","mentions":3,"why":"one or two sentences on what they did","evidence":["short paraphrase of up to 3 specific points"]}]}. Order the strongest candidate first.',
+    json: true, tokens: 1200,
+    prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
+  },
+  month: {
+    system: NL_COMMON + ' Task: write a summary of everything people have accomplished around the brewery this month, for the newsletter. 120 to 180 words, one or two short paragraphs, flowing prose with no bullets, headings or markdown. Cover all teams that appear, lead with the biggest achievements, and mention people by name where the points name them. Refer to areas as teams (for example "the QC Team"), never as sections or fields.',
+    tokens: 700,
+    prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
+  },
+  person: {
+    system: NL_COMMON + ' Task: write a short summary of one person\'s accomplishments this month, for the newsletter recognising them as Balter Legend of the Month. 60 to 100 words, third person, warm and specific, plain prose with no bullets, headings or markdown. Use only the points provided, which are the ones that mention them. If the points show little, keep it short rather than padding.',
+    tokens: 500,
+    prompt: (b, pts) => `Month: ${b.month}\nPerson: ${b.name}\nPoints that mention them:\n${pts}`,
+  },
+  topics: {
+    system: NL_COMMON + ' Task: suggest 6 to 9 topics for the "Around the Brewery" section of the newsletter. Each topic should be an event or accomplishment, drawn from different teams and employees where possible, that staff would enjoy reading about. Do not suggest dull routine operations. Reply with JSON only, in this exact shape: {"topics":[{"title":"short headline of up to 6 words","team":"TEAM LABEL IN CAPITALS such as SAFETY, COMMUNITY, PLANNING & LOGISTICS","blurb":"one sentence on what happened"}]}.',
+    json: true, tokens: 1200,
+    prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
+  },
+  topic: {
+    system: NL_COMMON + ' Task: write one "Around the Brewery" newsletter item about the chosen topic, using only the points that relate to it. Lead with the news, then thank the people involved by name where the points name them. Body about 70 words (60 to 80), plain prose with no bullets or markdown. Reply with JSON only, in this exact shape: {"team":"TEAM LABEL IN CAPITALS","headline":"short headline of up to 6 words","body":"the item"}.',
+    json: true, tokens: 700,
+    prompt: (b, pts) => `Month: ${b.month}\nChosen topic: ${b.topic.title}${b.topic.blurb ? ' - ' + b.topic.blurb : ''}${b.topic.team ? ' (team: ' + b.topic.team + ')' : ''}\nPoints:\n${pts}`,
+  },
+};
+
+function extractJson(text) {
+  const t = String(text || '');
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s < 0 || e <= s) return null;
+  try { return JSON.parse(t.slice(s, e + 1)); } catch (err) { return null; }
+}
+
+async function handleNewsletter(request, env) {
+  const json = (obj, status) => new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  if (!env.AI && !env.ANTHROPIC_API_KEY) return json({ error: 'No AI provider configured on the Worker' }, 501);
+  const raw = await request.text();
+  if (raw.length > 160000) return json({ error: 'Request too large' }, 413);
+  let body;
+  try { body = JSON.parse(raw); } catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  const task = NL_TASKS[body.task];
+  if (!task) return json({ error: 'Unknown task' }, 400);
+  const points = (Array.isArray(body.points) ? body.points : []).slice(0, 500).map(p => ({
+    when: String((p && p.when) || '').slice(0, 40),
+    team: String((p && p.team) || '').slice(0, 40),
+    text: String((p && p.text) || '').slice(0, 800),
+  })).filter(p => p.text);
+  if (!points.length) return json({ error: 'No points to work from' }, 400);
+  const b = {
+    month: String(body.month || '').slice(0, 40),
+    name: String(body.name || '').slice(0, 80),
+    topic: { title: String((body.topic && body.topic.title) || '').slice(0, 120), blurb: String((body.topic && body.topic.blurb) || '').slice(0, 300), team: String((body.topic && body.topic.team) || '').slice(0, 60) },
+  };
+  if (body.task === 'person' && !b.name.trim()) return json({ error: 'A name is needed' }, 400);
+  if (body.task === 'topic' && !b.topic.title.trim()) return json({ error: 'A topic is needed' }, 400);
+  const pts = points.map(p => `- [${[p.when, p.team].filter(Boolean).join(' \u00b7 ')}] ${p.text}`).join('\n');
+  try {
+    let text = await callLLM(env, task.system, task.prompt(b, pts), task.tokens);
+    if (!task.json) return json({ text });
+    let data = extractJson(text);
+    if (!data) { // one retry: models occasionally wrap or break the JSON
+      text = await callLLM(env, task.system + ' Reply with valid JSON only, no other text.', task.prompt(b, pts), task.tokens);
+      data = extractJson(text);
+    }
+    if (!data) return json({ error: 'The AI reply could not be read - please try again' }, 502);
+    return json({ data });
+  } catch (e) {
+    return json({ error: e.message || 'AI request failed' }, 502);
+  }
 }
 
 // ---------------- Worker ----------------
@@ -254,6 +341,7 @@ export default {
 
     // Authenticated
     if (url.pathname === '/api/summarize') return handleSummarize(request, env);
+    if (url.pathname === '/api/newsletter') return handleNewsletter(request, env);
 
     // Serve the static site
     return env.ASSETS.fetch(request);

@@ -44,3 +44,9 @@ not just static assets.
 AI summaries are written only from the text typed into each point (plus its section name and day); the sheet's field/prompt names are never sent to the AI.
 
 Weekly Ops also has an annual production gauge (fermenter graphic, default target 14,000,000 L, editable on the page; shown in the weekly email as a PNG image of the fermenter). The packaged-to-date litres are typed into the field and saved in that browser.
+
+## Newsletter page (`public/newsletter.html`)
+
+Linked from the "Newsletter" button on the 9AM page. It reads every day's tab for a calendar month (default: the previous month), combines the Key Points and Wins (repeats merged), and uses the AI route `POST /api/newsletter` for: Balter Legend of the Month shortlist, a summary for the chosen person, a month-in-review summary, topic ideas for "Around the Brewery", and an item per chosen topic. All AI output can be redone or edited, and is saved per month in the browser.
+
+"Export to Slides" builds a `.pptx` in the browser (self-hosted `public/vendor/pptxgen.bundle.js`, Lexend font, assets in `public/assets/`) laid out like the "Around the brewery" slides in the September deck: black slide, three coloured cards per slide, photo placeholder, label, headline, ~70 words. Upload it to Google Drive and open it with Google Slides.
