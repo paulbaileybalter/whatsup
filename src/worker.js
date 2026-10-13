@@ -119,7 +119,7 @@ function loginPageHtml(showError) {
 
 const SUMMARY_SYSTEM = [
   "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting for a weekly operations review.",
-  "You get one section (e.g. QC, Packaging) with dated points. Write a short, punchy plain-text summary of the week for that section: one or two short sentences and no more than 35 words, Australian English. Lead with the single most important thing, use active verbs and plain words, and cut filler such as \"this week\", \"it was noted that\" or \"the team continued to\".",
+  "You get one section (e.g. QC, Packaging) with dated points. Write a plain, factual summary of the week for that section: two to three sentences, roughly 50 to 70 words, Australian English. Include the specific details that matter (products, quantities, tanks, lines, days, outcomes) rather than generalities. Use a neutral, professional tone: plain words, no dramatic, colourful or promotional language, and no filler such as \"this week\" or \"it was noted that\".",
   "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
@@ -128,7 +128,7 @@ const SUMMARY_SYSTEM = [
 
 const SUMMARY_SYSTEM_DAILY = [
   "You write the Executive Summary for a brewery's daily 9AM operations meeting.",
-  "You get today's Key Points (each tagged with its section, e.g. QC, Packaging) and today's Wins (tagged Win). Write a short plain-text summary of the day for leadership: 2-4 sentences, Australian English.",
+  "You get today's Key Points (each tagged with its section, e.g. QC, Packaging) and today's Wins (tagged Win). Write a plain, factual summary of the day for leadership: three to four sentences, roughly 60 to 90 words, Australian English. Include the specific details that matter (products, quantities, tanks, lines, outcomes) rather than generalities. Use a neutral, professional tone: plain words and no dramatic, colourful or promotional language.",
   "Lead with what matters most; mention wins briefly if there are any. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
@@ -181,7 +181,7 @@ async function callLLM(env, system, prompt, maxTokens) {
 }
 
 async function summariseOne(env, sec, mode) {
-  return callLLM(env, mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM, sectionPrompt(sec, mode), mode === 'daily' ? 400 : 250);
+  return callLLM(env, mode === 'daily' ? SUMMARY_SYSTEM_DAILY : SUMMARY_SYSTEM, sectionPrompt(sec, mode), mode === 'daily' ? 500 : 400);
 }
 
 async function handleSummarize(request, env) {
