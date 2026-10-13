@@ -487,7 +487,7 @@
   const winsList = () => [...current.winsLeft, ...current.winsRight].filter(Boolean);
   // The Executive Summary is written from both the Key Points (ticked rows) and the Wins.
   const execInputs = () => [
-    ...(current.needToKnow || []).map(i => ({ dayLabel: i.section, label: i.label, value: i.value })),
+    ...(current.needToKnow || []).map(i => ({ dayLabel: i.section, label: '', value: i.value })),
     ...winsList().map(w => ({ dayLabel: 'Win', label: '', value: w })),
   ];
   const ntkBasis = () => hashStr(execInputs().map(i => i.dayLabel + '|' + i.label + '|' + i.value).join('\n'));

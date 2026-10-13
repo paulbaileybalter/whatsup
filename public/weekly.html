@@ -580,7 +580,7 @@
       const res = await fetch('/api/summarize', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: secs.map(sc => ({ title: sc.title, items: visibleItems(sc) })) }),
+        body: JSON.stringify({ sections: secs.map(sc => ({ title: sc.title, items: visibleItems(sc).map(i => ({ dayLabel: i.dayLabel, label: '', value: i.value })) })) }),
       });
       if (res.redirected || res.status === 401) { location.href = '/login'; return; }
       const data = await res.json().catch(() => ({}));

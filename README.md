@@ -40,3 +40,5 @@ Connected via Cloudflare Workers Builds (Git integration) — push to the
 connected branch and Cloudflare builds and deploys automatically. No
 drag-and-drop; Workers Builds is required since this runs a Worker script,
 not just static assets.
+
+AI summaries are written only from the text typed into each point (plus its section name and day); the sheet's field/prompt names are never sent to the AI.

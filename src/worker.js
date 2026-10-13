@@ -121,6 +121,7 @@ const SUMMARY_SYSTEM = [
   "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting for a weekly operations review.",
   "You get one section (e.g. QC, Packaging) with dated points. Write a short plain-text summary of the week for that section: 2-4 sentences, Australian English.",
   "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
+  "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
 ].join(' ');
 
@@ -128,14 +129,15 @@ const SUMMARY_SYSTEM_DAILY = [
   "You write the Executive Summary for a brewery's daily 9AM operations meeting.",
   "You get today's Key Points (each tagged with its section, e.g. QC, Packaging) and today's Wins (tagged Win). Write a short plain-text summary of the day for leadership: 2-4 sentences, Australian English.",
   "Lead with what matters most; mention wins briefly if there are any. Only use facts in the points; never invent numbers, causes or actions.",
+  "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
 ].join(' ');
 
 function sectionPrompt(sec, mode) {
   if (mode === 'daily') {
-    return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}]${i.label && i.label !== i.dayLabel ? ' ' + i.label + ':' : ''} ${i.value}`).join('\n');
+    return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}] ${i.value}`).join('\n');
   }
-  const lines = sec.items.map(i => `- ${i.dayLabel}${i.label && i.label !== sec.title ? ' (' + i.label + ')' : ''}: ${i.value}`);
+  const lines = sec.items.map(i => `- ${i.dayLabel}: ${i.value}`); // field names are deliberately left out
   return `Section: ${sec.title}\nPoints:\n${lines.join('\n')}`;
 }
 
