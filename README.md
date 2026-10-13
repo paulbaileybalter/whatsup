@@ -11,7 +11,9 @@ setup steps. Quick reference:
   button on the daily page). Reads the chosen day plus the 6 days before it from the
   sheet, groups the ticked Executive Summary points by section, shows an AI summary per
   section above the original points, and builds the weekly email (same format as the
-  daily one). Days without a tab (e.g. weekends) are skipped and shown as "no tab".
+  daily one). Each tile can redo its own AI summary, summaries can be edited by hand,
+  and individual points can be removed (and restored); edits and removals are saved in
+  that browser per week and are reflected in the email. Days without a tab (e.g. weekends) are skipped and shown as "no tab".
 - `POST /api/summarize` — password-gated Worker route that writes the AI summaries.
   By default it uses Workers AI via the `AI` binding in `wrangler.jsonc` (no key needed).
   To use Claude instead, add a Worker Secret `ANTHROPIC_API_KEY` (optionally a Text

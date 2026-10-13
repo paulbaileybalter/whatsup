@@ -127,6 +127,22 @@
   .banner.error { background: var(--red-10); color: #a8362a; border-color: rgba(229,102,89,.35); }
   .banner button { margin-left: auto; }
 
+  .wk-btn { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 4px 10px; cursor: pointer; color: var(--ink); }
+  .wk-btn:hover:not(:disabled) { background: rgba(0,0,0,.04); }
+  .wk-btn:disabled { opacity: .5; cursor: default; }
+  .wk-link { border: none; background: none; padding: 0; margin: 6px 0 0; display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--mint-ink); cursor: pointer; text-decoration: underline; }
+  .wk-summary .wk-link { margin-top: 8px; }
+  .wk-body > .wk-link { margin-top: 10px; }
+  .wk-summary .wk-link { display: inline-block; }
+  .ai-tag.edited { background: var(--apricot); }
+  .wk-stale { margin-top: 6px; font-size: 11.5px; color: #9a5b12; }
+  .wk-edit { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; resize: vertical; background: #fff; }
+  .wk-edit:focus { outline: none; border-color: var(--mint); }
+  .wk-edit-row { display: flex; gap: 8px; margin-top: 8px; }
+  .wk-point { grid-template-columns: 74px 1fr 22px !important; }
+  .wk-x { border: none; background: none; color: var(--muted); font-size: 12px; cursor: pointer; width: 22px; height: 22px; border-radius: 6px; padding: 0; opacity: .5; }
+  .wk-point:hover .wk-x { opacity: 1; }
+  .wk-x:hover { background: #fdeceb; color: #c4473b; }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
   .empty-state .big { font-size: 40px; margin-bottom: 10px; }
 
@@ -497,9 +513,21 @@
   const app = document.getElementById('app');
   let endDate = parseYmd(new URLSearchParams(location.search).get('date')) || new Date();
   let weekData = null;      // { days: [{date,label,tabName|null,items:[]}], sections: [{title,color,icon,items:[{dayLabel,label,value}]}] }
-  let summaries = {};       // section title -> text
-  let summaryState = 'idle'; // idle | loading | done | failed
-  let summaryError = '';
+  let state = { summaries: {}, removed: {} }; // summaries[title] = {text, edited, basis}; removed[pointId] = true
+  let errors = {};          // title -> last AI error for that section
+  let busy = {};            // title -> true while a summary is being written
+  let editing = null;       // title currently being edited
+  let editDraft = '';
+  const stateKey = () => 'weekly_state_v1_' + toYmd(endDate);
+  function loadState() {
+    try { const x = JSON.parse(localStorage.getItem(stateKey()) || 'null'); if (x && x.summaries && x.removed) return x; } catch (e) {}
+    return { summaries: {}, removed: {} };
+  }
+  function saveState() { try { localStorage.setItem(stateKey(), JSON.stringify(state)); } catch (e) {} }
+  const summaryText = t => (state.summaries[t] && state.summaries[t].text) || '';
+  const visibleItems = sec => sec.items.filter(i => !state.removed[i.id]);
+  const basisOf = sec => hashStr(visibleItems(sec).map(i => i.id).join(','));
+  function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0); }
   let loading = false;
   let progress = '';
 
@@ -512,7 +540,7 @@
   }
 
   async function loadWeek() {
-    loading = true; summaries = {}; summaryState = 'idle'; summaryError = ''; weekData = null;
+    loading = true; state = loadState(); errors = {}; busy = {}; editing = null; weekData = null;
     const dates = [];
     for (let i = DAYS_BACK; i >= 0; i--) { const d = new Date(endDate); d.setDate(d.getDate() - i); dates.push(d); }
     const days = dates.map(d => ({ date: d, label: dayLabel(d), tabName: null, items: [] }));
@@ -532,42 +560,41 @@
     await Promise.all([worker(), worker(), worker()]); // at most 3 tabs in flight at once
     const sections = SECTION_ORDER.map(s => {
       const items = [];
-      days.forEach(d => d.items.filter(it => it.section === s.title).forEach(it => items.push({ dayLabel: d.label, label: it.label, value: it.value })));
+      days.forEach(d => d.items.filter(it => it.section === s.title).forEach(it => items.push({ id: hashStr(d.label + '|' + it.label + '|' + it.value), dayLabel: d.label, label: it.label, value: it.value })));
       return { title: s.title, color: s.color, icon: s.icon, items };
     }).filter(s => s.items.length);
     weekData = { days, sections };
     loading = false; progress = '';
     render();
-    if (sections.length) await summarise(false);
+    await summariseTitles(sections.filter(sc => visibleItems(sc).length && !summaryText(sc.title)).map(sc => sc.title));
   }
 
-  const cacheKey = () => 'weekly_ai_' + JSON.stringify((weekData ? weekData.sections : []).map(s => [s.title, s.items.map(i => [i.dayLabel, i.label, i.value])]));
-  function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0); }
-
-  async function summarise(force) {
-    if (!weekData || !weekData.sections.length) return;
-    const key = 'weekly_ai_' + hashStr(cacheKey());
-    if (!force) {
-      try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && c.summaries) { summaries = c.summaries; summaryState = 'done'; render(); return; } } catch (e) {}
-    }
-    summaryState = 'loading'; summaryError = ''; render();
+  // Writes summaries for the named sections only (one call per request, so a single tile can be redone alone).
+  async function summariseTitles(titles) {
+    titles = titles.filter(t => !busy[t]);
+    const secs = weekData ? weekData.sections.filter(sc => titles.includes(sc.title) && visibleItems(sc).length) : [];
+    if (!secs.length) return;
+    secs.forEach(sc => { busy[sc.title] = true; delete errors[sc.title]; });
+    render();
     try {
       const res = await fetch('/api/summarize', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sections: weekData.sections.map(s => ({ title: s.title, items: s.items })) }),
+        body: JSON.stringify({ sections: secs.map(sc => ({ title: sc.title, items: visibleItems(sc) })) }),
       });
       if (res.redirected || res.status === 401) { location.href = '/login'; return; }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
-      summaries = data.summaries || {};
-      const got = Object.values(summaries).filter(Boolean).length;
-      if (!got) throw new Error('No summary returned');
-      summaryState = 'done';
-      try { localStorage.setItem(key, JSON.stringify({ summaries })); } catch (e) {}
+      secs.forEach(sc => {
+        const text = data.summaries && data.summaries[sc.title];
+        if (text) state.summaries[sc.title] = { text, edited: false, basis: basisOf(sc) };
+        else errors[sc.title] = 'No summary returned';
+      });
+      saveState();
     } catch (e) {
-      summaryState = 'failed'; summaryError = e.message || 'unknown error';
+      secs.forEach(sc => { errors[sc.title] = e.message || 'unknown error'; });
     }
+    secs.forEach(sc => { delete busy[sc.title]; });
     render();
   }
 
@@ -576,11 +603,11 @@
   const rangeText = () => `${dayLabel(weekData.days[0].date)} – ${dayLabel(weekData.days[weekData.days.length - 1].date)} ${endDate.getFullYear()}`;
   function emailSection(sec) {
     const hex = COLOR_HEX[sec.color] || '#14161a';
-    const sum = summaries[sec.title];
+    const sum = summaryText(sec.title);
     const th = 'padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;';
     const rows = [];
     if (sum) rows.push({ f: 'Week summary', v: sum, bold: true });
-    sec.items.forEach(it => rows.push({ f: `${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}`, v: it.value }));
+    visibleItems(sec).forEach(it => rows.push({ f: `${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}`, v: it.value }));
     const dataRows = rows.map((r, i) => `
       <tr>
         <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.f)}</td>
@@ -620,17 +647,17 @@
             </tr></table>
           </td></tr>
           <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
-          ${weekData.sections.map(emailSection).join('')}
+          ${weekData.sections.filter(sc => visibleItems(sc).length).map(emailSection).join('')}
         </table>
       </td></tr>
     </table>`;
   }
   function buildEmailPlainText() {
     const lines = [`WEEKLY OPS — ${rangeText()}`, ''];
-    weekData.sections.forEach(sec => {
+    weekData.sections.filter(sc => visibleItems(sc).length).forEach(sec => {
       lines.push(sec.title.toUpperCase());
-      if (summaries[sec.title]) lines.push(`  Week summary: ${summaries[sec.title]}`);
-      sec.items.forEach(it => lines.push(`  - ${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}: ${it.value}`));
+      if (summaryText(sec.title)) lines.push(`  Week summary: ${summaryText(sec.title)}`);
+      visibleItems(sec).forEach(it => lines.push(`  - ${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}: ${it.value}`));
       lines.push('');
     });
     return lines.join('\n');
@@ -660,7 +687,7 @@
     document.body.appendChild(backdrop);
   }
   async function exportEmail() {
-    if (!weekData || !weekData.sections.length) { showToast('Nothing to export yet'); return false; }
+    if (!weekData || !weekData.sections.some(sc => visibleItems(sc).length)) { showToast('Nothing to export yet'); return false; }
     const html = buildEmailHtml(), text = buildEmailPlainText();
     try {
       if (navigator.clipboard && window.ClipboardItem) {
@@ -705,7 +732,7 @@
 
     const right = el('div', 'topbar-right');
     const emailBtn = document.createElement('button');
-    emailBtn.className = 'btn primary'; emailBtn.textContent = 'Build weekly email'; emailBtn.disabled = loading || !weekData || !weekData.sections.length;
+    emailBtn.className = 'btn primary'; emailBtn.textContent = 'Build weekly email'; emailBtn.disabled = loading || !weekData || !weekData.sections.some(sc => visibleItems(sc).length);
     emailBtn.addEventListener('click', async () => {
       const ok = await exportEmail();
       if (ok) { emailBtn.textContent = 'Copied to clipboard!'; setTimeout(() => { emailBtn.textContent = 'Build weekly email'; }, 2500); }
@@ -733,16 +760,19 @@
     frame.appendChild(strip);
 
     // AI status line
+    const status = el('div', 'ai-status');
+    const anyBusy = Object.keys(busy).length > 0, errTitles = Object.keys(errors);
+    if (anyBusy) status.innerHTML = `<span class="spinner"></span> Summarising with AI…`;
+    else if (errTitles.length) status.innerHTML = `⚠️ AI summary unavailable for ${escHtml(errTitles.join(', '))} (${escHtml(errors[errTitles[0]])}). The original points are still shown.`;
+    else if (weekData.sections.length) status.innerHTML = `✨ Summaries are written by AI from the points below — you can edit any of them, redo one tile, or remove points.`;
     if (weekData.sections.length) {
-      const status = el('div', 'ai-status');
-      if (summaryState === 'loading') status.innerHTML = `<span class="spinner"></span> Summarising with AI…`;
-      else if (summaryState === 'failed') status.innerHTML = `⚠️ AI summary unavailable (${escHtml(summaryError)}). The original points are shown below.`;
-      else if (summaryState === 'done') status.innerHTML = `✨ Summaries written by AI from the points below — check against the source points.`;
-      const regen = el('button', 'btn ghost', summaryState === 'failed' ? 'Try again' : 'Regenerate');
-      regen.style.cssText = 'padding:6px 12px;font-size:12px;margin-left:10px;';
-      regen.disabled = summaryState === 'loading';
-      regen.addEventListener('click', () => summarise(true));
-      if (summaryState !== 'idle') { status.appendChild(regen); frame.appendChild(status); }
+      const regenAll = el('button', 'btn ghost', 'Regenerate all');
+      regenAll.title = 'Redoes every summary you have not edited by hand';
+      regenAll.style.cssText = 'padding:6px 12px;font-size:12px;margin-left:10px;';
+      regenAll.disabled = anyBusy;
+      regenAll.addEventListener('click', () => summariseTitles(weekData.sections.filter(sc => !(state.summaries[sc.title] && state.summaries[sc.title].edited)).map(sc => sc.title)));
+      status.appendChild(regenAll);
+      frame.appendChild(status);
     }
 
     if (!weekData.sections.length) {
@@ -752,18 +782,74 @@
 
     const grid = el('div', 'weekly-grid');
     weekData.sections.forEach(sec => {
+      const vis = visibleItems(sec), removedCount = sec.items.length - vis.length;
+      const sm = state.summaries[sec.title];
       const card = el('div', 'wk-card');
       card.style.setProperty('--accent', sec.color);
-      const head = el('div', 'wk-head', `<span class="wk-ico">${escHtml(sec.icon)}</span><span class="wk-title">${escHtml(sec.title)}</span><span class="wk-count">${sec.items.length} point${sec.items.length > 1 ? 's' : ''}</span>`);
+      const head = el('div', 'wk-head', `<span class="wk-ico">${escHtml(sec.icon)}</span><span class="wk-title">${escHtml(sec.title)}</span><span class="wk-count">${vis.length} point${vis.length === 1 ? '' : 's'}</span>`);
+      const regen = el('button', 'wk-btn', busy[sec.title] ? '…' : '↻ Redo summary');
+      regen.title = 'Write a new AI summary for this tile only';
+      regen.disabled = !!busy[sec.title] || !vis.length;
+      regen.addEventListener('click', () => {
+        if (sm && sm.edited && !confirm('This will replace your edited summary. Continue?')) return;
+        if (editing === sec.title) editing = null;
+        summariseTitles([sec.title]);
+      });
+      head.appendChild(regen);
       card.appendChild(head);
       const body = el('div', 'wk-body');
-      if (summaries[sec.title]) body.appendChild(el('div', 'wk-summary', `<span class="ai-tag">AI summary</span>${escHtml(summaries[sec.title])}`));
-      else if (summaryState === 'loading') body.appendChild(el('div', 'wk-summary pending', 'Summarising…'));
+
+      if (editing === sec.title) {
+        const box = el('div', 'wk-summary');
+        const ta = document.createElement('textarea');
+        ta.className = 'wk-edit'; ta.value = editDraft; ta.rows = 5;
+        ta.addEventListener('input', () => { editDraft = ta.value; });
+        box.appendChild(ta);
+        const row = el('div', 'wk-edit-row');
+        const save = el('button', 'btn primary', 'Save'); save.style.cssText = 'padding:6px 14px;font-size:12px;';
+        save.addEventListener('click', () => {
+          const text = editDraft.trim();
+          if (text) state.summaries[sec.title] = { text, edited: true, basis: basisOf(sec) }; else delete state.summaries[sec.title];
+          saveState(); editing = null; render();
+        });
+        const cancel = el('button', 'btn ghost', 'Cancel'); cancel.style.cssText = 'padding:6px 14px;font-size:12px;';
+        cancel.addEventListener('click', () => { editing = null; render(); });
+        row.appendChild(save); row.appendChild(cancel); box.appendChild(row);
+        body.appendChild(box);
+        setTimeout(() => { const t = body.querySelector('textarea'); if (t) t.focus(); }, 0);
+      } else if (sm && sm.text) {
+        const stale = sm.basis !== basisOf(sec);
+        const box = el('div', 'wk-summary', `<span class="ai-tag${sm.edited ? ' edited' : ''}">${sm.edited ? 'Edited' : 'AI summary'}</span>${escHtml(sm.text)}`);
+        if (stale) box.appendChild(el('div', 'wk-stale', 'Points have changed since this summary was written.'));
+        const edit = el('button', 'wk-link', 'Edit');
+        edit.addEventListener('click', () => { editing = sec.title; editDraft = sm.text; render(); });
+        box.appendChild(edit);
+        body.appendChild(box);
+      } else if (busy[sec.title]) {
+        body.appendChild(el('div', 'wk-summary pending', 'Summarising…'));
+      } else if (vis.length) {
+        const box = el('div', 'wk-summary pending', errors[sec.title] ? 'No summary yet. ' : 'No summary yet. ');
+        const write = el('button', 'wk-link', 'Write my own');
+        write.addEventListener('click', () => { editing = sec.title; editDraft = ''; render(); });
+        box.appendChild(write);
+        body.appendChild(box);
+      }
+
       const list = el('div', 'wk-points');
-      sec.items.forEach(it => {
-        list.appendChild(el('div', 'wk-point', `<span class="wk-day">${escHtml(it.dayLabel)}</span><span class="wk-text">${it.label && it.label !== sec.title ? `<b>${escHtml(it.label)}:</b> ` : ''}${escHtml(it.value)}</span>`));
+      vis.forEach(it => {
+        const row = el('div', 'wk-point', `<span class="wk-day">${escHtml(it.dayLabel)}</span><span class="wk-text">${it.label && it.label !== sec.title ? `<b>${escHtml(it.label)}:</b> ` : ''}${escHtml(it.value)}</span>`);
+        const x = el('button', 'wk-x', '✕'); x.title = 'Remove this point from the weekly summary and email';
+        x.addEventListener('click', () => { state.removed[it.id] = true; saveState(); render(); });
+        row.appendChild(x);
+        list.appendChild(row);
       });
       body.appendChild(list);
+      if (!vis.length) body.appendChild(el('div', 'wk-summary pending', 'All points removed — this tile is left out of the email.'));
+      if (removedCount) {
+        const restore = el('button', 'wk-link', `Restore ${removedCount} removed point${removedCount > 1 ? 's' : ''}`);
+        restore.addEventListener('click', () => { sec.items.forEach(i => { delete state.removed[i.id]; }); saveState(); render(); });
+        body.appendChild(restore);
+      }
       card.appendChild(body);
       grid.appendChild(card);
     });
