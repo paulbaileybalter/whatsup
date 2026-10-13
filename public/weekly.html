@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balter Brewing — Weekly Ops</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxNjEgMTYxIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMzAuMi4xLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjEgQnVpbGQgMSkgIC0tPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuc3QwIHsKICAgICAgICBmaWxsOiAjNmNjNWE1OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMTM2LjMsNzAuNGwtOS40LTkuNGMtMS42LTEuNi00LjMtMS42LTYsMC0xLjYsMS42LTEuNiw0LjMsMCw2bDIuMywyLjNjLTkuNiwxMy4yLTI1LjIsMjEuNy00Mi43LDIxLjdzLTMzLjEtOC42LTQyLjctMjEuOGwyLjMtMi4zYzEuNi0xLjYsMS42LTQuMywwLTYtMS42LTEuNi00LjMtMS42LTYsMGwtOS40LDkuNGMtMS42LDEuNi0xLjYsNC4zLDAsNiwuOC44LDEuOSwxLjIsMywxLjJzMi4yLS40LDMtMS4ybDEuMS0xLjFjMTEuMiwxNC43LDI4LjksMjQuMiw0OC43LDI0LjJzMzcuNS05LjUsNDguNy0yNC4ybDEuMSwxLjFjLjguOCwxLjksMS4yLDMsMS4yczIuMi0uNCwzLTEuMmMxLjYtMS42LDEuNi00LjMsMC02Ii8+CiAgPHBhdGggY2xhc3M9InN0MCIgZD0iTTE1Mi41LDguNXYxNDRIOC41VjguNWgxNDRNMTYxLDBIMHYxNjFoMTYxVjBoMFoiLz4KPC9zdmc+">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app"></div>
+<style>
+  #app, #app * { box-sizing: border-box; }
+  #app {
+    --mint: #47D7AC; --mint-ink: #0d6a4d; --apricot: #FDAA63; --purple: #7566A0;
+    --sky: #99D6EA; --gold: #FFD637; --pale: #F1EB9C; --indigo: #8C93D8;
+    --leaf: #8BC48A; --coral: #F2937D; --violet: #B295D1; --slate: #6C7A89;
+    --red: #e56659; --red-10: #fdeceb;
+
+    --safety: var(--mint); --qc: var(--purple); --brew: var(--sky); --packaging: var(--apricot);
+    --maintenance: var(--gold); --logistics: var(--indigo); --engineering: var(--leaf);
+    --customer: var(--coral); --planning: var(--violet); --people: var(--slate); --wins: var(--pale);
+
+    --ink: #14161a; --ink-soft: #55585F; --muted: #9a9da3; --paper: #FBFBF9; --canvas: #ffffff;
+    --line: rgba(0,0,0,.10); --line-soft: rgba(0,0,0,.06);
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px;
+    --shadow-card: 0 1px 2px rgba(20,22,26,.04), 0 8px 24px -12px rgba(20,22,26,.10);
+    --shadow-pop: 0 12px 32px -8px rgba(20,22,26,.22);
+    --font-display: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, sans-serif;
+    --font-data: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    font-family: var(--font-body);
+    color: var(--ink); background: var(--canvas); padding: 18px; max-width: 1400px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame { background: transparent; padding: 0; }
+  .topbar {
+    display: grid; grid-template-columns: auto auto auto auto; justify-content: space-between; align-items: center; gap: 16px;
+    margin-bottom: 18px; background: var(--canvas); border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg); padding: 12px 20px; box-shadow: var(--shadow-card);
+  }
+  .date-pill { justify-self: center; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; font-family: var(--font-display); }
+  .date-pill .ico { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1.5px solid var(--line); cursor: pointer; font-family: inherit; padding: 0; flex: 0 0 auto; transform: rotate(-3deg); }
+  .date-pill .ico:hover { background: #F7F7F7; }
+  .refresh-icon-btn { border: 1.5px solid var(--line); background: #fff; padding: 0; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .refresh-icon-btn img { width: 20px; height: 20px; display: block; }
+  .refresh-icon-btn:disabled { opacity: .5; cursor: default; }
+  .refresh-icon-btn:hover:not(:disabled) { background: #F7F7F7; }
+  .brand { display: flex; align-items: center; gap: 10px; justify-self: start; }
+  .brand__mark { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand__logo { width: 34px; height: 34px; }
+  .brand__text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand__title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); white-space: nowrap; }
+  .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
+  .lti-pill { justify-self: end; display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 18px; background: var(--paper); }
+  .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 16px; font-size: 12.5px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
+  .gmail-icon-btn { width: 34px; height: 34px; border-radius: 10px; background: transparent; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .12s ease, border-color .12s ease; }
+  .gmail-icon-btn:hover { background: rgba(0,0,0,.04); border-color: var(--ink); }
+  .lti-pill .num { font-size: 20px; font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+  .lti-pill .lbl { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; text-transform: uppercase; }
+
+  .section-label { font-weight: 700; font-size: 12px; letter-spacing: .06em; color: var(--ink-soft); margin: 22px 2px 10px; text-transform: uppercase; font-family: var(--font-body); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .card {
+    border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas);
+    border: 1px solid var(--line-soft); box-shadow: var(--shadow-card);
+    border-left: 4px solid var(--card-accent, var(--mint));
+    display: flex; flex-direction: column;
+  }
+  .card-head { color: var(--ink); font-weight: 700; font-size: 12.5px; padding: 12px 14px 10px; display: flex; align-items: center; gap: 9px; font-family: var(--font-display); }
+  .card-head .tabicon { flex-shrink: 0; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; transform: rotate(-3deg); background: var(--card-accent, var(--mint)); }
+  .card-head .owner { font-weight: 600; opacity: .8; font-size: 10.5px; margin-left: auto; white-space: nowrap; font-family: var(--font-body); text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); }
+  .kpi-rows { padding: 2px 14px 12px; }
+  .kpi-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
+  .kpi-row:last-child { border-bottom: none; }
+  .kpi-row .lbl { color: var(--ink-soft); }
+  .kpi-row .val { font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+
+  .owner-grid { display: grid; gap: 12px; margin-bottom: 4px; }
+  .owner-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .owner-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+  .bullets { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+  .bullet { display: flex; gap: 8px; align-items: flex-start; }
+  .bullet .rag { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; background: var(--line); }
+  .bullet .rag.green { background: var(--mint-ink); }
+  .bullet .rag.amber { background: #b8860b; }
+  .bullet .rag.red { background: var(--red); }
+  .bullet .btext { font-size: 12.5px; line-height: 1.4; }
+  .bullet .blabel { font-weight: 700; color: var(--ink); }
+  .bullet .bval { color: var(--ink-soft); }
+  .bullet .bval.empty { color: var(--muted); font-style: italic; }
+
+  .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card .card-head .tabicon { background: var(--slate); }
+  .ntk-body { padding: 4px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ntk-line { font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .ntk-section { display: inline-block; background: var(--slate); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: middle; font-family: var(--font-body); }
+  .ntk-label { font-weight: 700; color: var(--ink); }
+  .ntk-value { color: var(--ink-soft); }
+  .wins-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; padding: 4px 16px 16px; }
+  .win-line { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: 12.5px; }
+  .win-line .star { color: #b8860b; font-size: 13px; margin-top: 1px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .btn {
+    appearance: none; border: none; cursor: pointer; border-radius: 999px; padding: 10px 18px;
+    font-family: var(--font-body); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--ink); color: #fff; }
+  .btn.primary:hover { background: #26282d; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.ghost:hover { background: rgba(0,0,0,.04); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .status { font-size: 12px; color: var(--ink-soft); margin-left: auto; font-weight: 600; }
+  .synced-note { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+  .banner { border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .banner.warn { background: #fffaea; color: #8a6a00; border-color: rgba(255,214,55,.55); }
+  .banner.error { background: var(--red-10); color: #a8362a; border-color: rgba(229,102,89,.35); }
+  .banner button { margin-left: auto; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+  .empty-state .big { font-size: 40px; margin-bottom: 10px; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(15,16,18,.55); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: var(--canvas); border-radius: var(--radius-lg); max-width: 640px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 22px 26px; box-shadow: var(--shadow-pop); }
+  .modal h2 { margin: 0 0 4px; font-size: 19px; font-family: var(--font-display); }
+  .modal .sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .close-x { float: right; border: none; background: transparent; color: var(--ink-soft); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 20px; line-height: 1; }
+  .close-x:hover { background: rgba(0,0,0,.05); }
+
+  #toastMsg {
+    font-family: var(--font-body); position: fixed; left: 50%; bottom: 26px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px;
+    font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow-pop);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+    z-index: 100; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  #toastMsg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toastMsg::before { content: "✓"; color: var(--mint); font-weight: 800; }
+
+  @media (max-width: 1000px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  .btn, .lti-pill { white-space: nowrap; }
+  @media (max-width: 1180px) { .topbar { display: flex; flex-wrap: wrap; justify-content: center; } }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: 1fr; }
+    .wins-cols { grid-template-columns: 1fr; }
+    .topbar { grid-template-columns: 1fr; text-align: center; }
+    .topbar { flex-direction: column; }
+    .topbar-right { justify-self: center; flex-wrap: wrap; justify-content: center; }
+    .brand { justify-self: center; }
+    .date-pill { justify-self: center; }
+  }
+  .date-input { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; font-family: var(--font-body); font-size: 13px; background: #fff; color: var(--ink); }
+  .day-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; }
+  .day-chip { background: var(--paper); border: 1px solid var(--line-soft); border-radius: var(--radius-md); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+  .day-chip b { font-family: var(--font-display); font-size: 12.5px; }
+  .day-chip span { color: var(--ink-soft); font-family: var(--font-data); font-size: 11px; }
+  .day-chip.missing { opacity: .55; border-style: dashed; }
+  .ai-status { font-size: 12.5px; color: var(--ink-soft); margin: 0 2px 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--mint); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .weekly-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+  .wk-card { background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--accent); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }
+  .wk-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; }
+  .wk-ico { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; transform: rotate(-3deg); }
+  .wk-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; flex: 1; }
+  .wk-count { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+  .wk-body { padding: 0 16px 14px; }
+  .wk-summary { background: #F6FBF9; border: 1px solid rgba(71,215,172,.35); border-radius: var(--radius-md); padding: 10px 12px; font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+  .wk-summary.pending { color: var(--muted); font-style: italic; }
+  .ai-tag { display: inline-block; background: var(--mint); color: var(--ink); font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 5px; padding: 1px 6px; margin-right: 8px; }
+  .wk-point { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line-soft); font-size: 12.5px; line-height: 1.45; }
+  .wk-day { font-family: var(--font-data); font-size: 11px; font-weight: 600; color: var(--ink-soft); padding-top: 1px; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--ink-soft); font-size: 14px; }
+  .empty-state .big { font-size: 34px; margin-bottom: 8px; }
+  @media (max-width: 1000px) { .day-strip { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 800px) { .weekly-grid { grid-template-columns: 1fr; } }
+</style>
+<script>
+(function () {
+  const KPI_SECTIONS = [
+    { key: 'safety', icon: '🦺', title: 'SAFETY', color: 'var(--safety)',
+      metrics: [['ltifr','LTIFR #'], ['nearmiss','Near Miss'], ['safetyconv','Safety Conversation'], ['housekeeping','House Keeping Score']] },
+    { key: 'qc', icon: '🧪', title: 'QC - MONTHLY KPI', color: 'var(--qc)',
+      metrics: [['micro','Micro %'], ['gmp','GMP %'], ['physchem','PhysChem %'], ['sensory','Sensory']] },
+    { key: 'brew', icon: '🍺', title: 'BREW & CELLAR', color: 'var(--brew)',
+      metrics: [['krones','Brewhouse Krones'], ['dme','Brewhouse DME'], ['ferm','Fermentation'], ['bbt','BBT']] },
+    { key: 'packaging', icon: '🥫', title: 'PACKAGING', color: 'var(--packaging)',
+      metrics: [['cartons','Cartons'], ['kegs','Kegs'], ['changeovers','Change Overs'], ['me','Last week ME']] },
+    { key: 'maintenance', icon: '🔧', title: 'MAINTENANCE', color: 'var(--maintenance)',
+      metrics: [['openwo','Open WO'], ['wpwo','WIP WO'], ['breakdowns','Weekly Breakdowns'], ['completed','Weekly Completed WO']] },
+    { key: 'logistics_cs', icon: '🚚', title: 'LOGISTICS & C-SERVICE', color: 'var(--logistics)',
+      metrics: [['soldlts','Sold Lts'], ['complaints','Customer Complaints'], ['keg','Keg'], ['carton','Carton']] },
+  ];
+
+  const OWNER_GROUPS = [
+    { cols: 3, sections: [
+      { key: 'safety_o', icon: '🦺', title: 'Safety', defaultOwner: 'Manny', color: 'var(--safety)', bullets: [
+        "Any incidents or near-misses from the previous day",
+        "Focused safety reminders or safety share",
+        "Time since last Lost Time Incident (LTI) on site",
+        "General information" ] },
+      { key: 'qc_o', icon: '🧪', title: 'QC', defaultOwner: 'Patrick', color: 'var(--qc)', bullets: [
+        "Current Blocked Stock",
+        "Status of any hold or flagged products BA",
+        "Status of any release BA",
+        "Issues from the previous day's testing or inspections",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'brew_o', icon: '🍺', title: 'Brew & Cellar', defaultOwner: 'Flash', color: 'var(--brew)', bullets: [
+        "Brewing schedule and key priorities (e.g., start times for batches, transfers)",
+        "Physchem KPI's (Out of spec Brewhouse Gravitys and pH for last 24hrs)",
+        "Equipment maintenance or downtime impacting brewing (Slow Tx speeds, Brewhouse delays)",
+        "Tank space or fermentation challenges",
+        "CIP in spec and available to transfer into",
+        "Staffing issues",
+        "General information / Temporary checking yeast collection Odor YES or NO" ] },
+    ]},
+    { cols: 4, sections: [
+      { key: 'packaging_o', icon: '🥫', title: 'Packaging', defaultOwner: 'Razor', color: 'var(--packaging)', bullets: [
+        "Overview of packaging runs: canning",
+        "Overview of packaging runs: kegs",
+        "Changeovers planned for the day",
+        "Equipment issues or maintenance planned",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'engineering_o', icon: '📐', title: 'Engineering', defaultOwner: 'Mark', color: 'var(--engineering)', bullets: [
+        "Project and contractor update",
+        "Plant Efficiency Improvements",
+        "General information" ] },
+      { key: 'maintenance_o', icon: '🔧', title: 'Maintenance', defaultOwner: 'Camo', color: 'var(--maintenance)', bullets: [
+        "Plant Equipment status",
+        "Critical repairs - Stop Production",
+        "Preventative tasks for the day",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'logistics_o', icon: '🚚', title: 'Logistics', defaultOwner: 'Jules', color: 'var(--logistics)', bullets: [
+        "Deliveries/pickups",
+        "Stock updates or inventory concerns",
+        "Equipment availability",
+        "Safety Concerns",
+        "Staffing issues",
+        "General information" ] },
+    ]},
+    { cols: 3, sections: [
+      { key: 'customer_o', icon: '🎧', title: 'Customer Service', defaultOwner: 'Grace', color: 'var(--customer)', bullets: [
+        "Updates on customer orders",
+        "Issues impacting timelines",
+        "Customer complaints",
+        "General information" ] },
+      { key: 'planning_o', icon: '📊', title: 'Planning Updates', defaultOwner: 'Paul', color: 'var(--planning)', bullets: [
+        "Overview of today's production schedule: brewing, cellaring, packaging",
+        "Any changes or delays impacting production or deliveries",
+        "Updates on materials or resources (e.g., raw ingredients, cans, bottles)",
+        "General information" ] },
+      { key: 'people_o', icon: '👥', title: 'People', defaultOwner: 'Lara', color: 'var(--people)', bullets: [
+        "Company updates", "", "", "", "" ] },
+    ]},
+  ];
+
+  const WINS_COUNT = 8; // 4 left, 4 right
+
+  // ---------------- Sheet layout map ----------------
+  const SHEET_ID = '1VFv36ypj0DO2vQ2aKCDpiwsBjAsKzaKcxlz7y3I5WAw';
+  const CACHE_KEY = 'last_sheet_sync'; // single shared key: cached copy of the last good sync, for resilience only
+
+  // ---------------- CSV / sheet fetching ----------------
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function tabNameCandidates(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const dNoPad = String(date.getDate());
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const mNoPad = String(date.getMonth() + 1);
+    const yy = String(date.getFullYear()).slice(-2);
+    const yyyy = String(date.getFullYear());
+    return [...new Set([
+      `${d}/${m}/${yy}`, `${d}/${m}`, `${d}/${m}/${yyyy}`, `${dNoPad}/${mNoPad}/${yy}`, `${dNoPad}/${mNoPad}`,
+    ])];
+  }
+
+  async function fetchTabCSV(tabName) {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text || text.length < 20 || /^<(!doctype|html)/i.test(text.trim())) return null;
+    if (!/safety/i.test(text.slice(0, 400))) return null;
+    return parseCSV(text);
+  }
+
+  function fetchTabJSONP(tabName) {
+    return new Promise((resolve, reject) => {
+      const cbName = '__gsheet_cb_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      let settled = false;
+      const cleanup = () => { delete window[cbName]; script.remove(); };
+      window[cbName] = data => {
+        if (settled) return;
+        settled = true;
+        try {
+          const table = data && data.table;
+          if (!table || !table.rows) { resolve(null); return; }
+          const rows = table.rows.map(r => (r.c || []).map(cell => {
+            if (!cell) return '';
+            if (cell.f !== undefined && cell.f !== null) return String(cell.f);
+            if (cell.v !== undefined && cell.v !== null) return String(cell.v);
+            return '';
+          }));
+          // Google's JSON output can strip N header rows into table.cols instead of leaving them in table.rows
+          // (parsedNumHeaders), which silently shifts every row number up relative to the CSV export. Put
+          // reconstructed header row(s) back so row numbering matches the sheet again.
+          const headerCount = table.parsedNumHeaders || 0;
+          for (let i = 0; i < headerCount; i++) {
+            rows.unshift((table.cols || []).map(c => (c && c.label) || ''));
+          }
+          resolve(rows);
+        } catch (e) { resolve(null); }
+        cleanup();
+      };
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tabName)}&tqx=out:json;responseHandler:${cbName}`;
+      script.onerror = () => { if (!settled) { settled = true; reject(new Error('JSONP load failed')); cleanup(); } };
+      document.body.appendChild(script);
+      setTimeout(() => { if (!settled) { settled = true; reject(new Error('JSONP timeout')); cleanup(); } }, 8000);
+    });
+  }
+
+  async function fetchTabRows(tabName) {
+    try { const v = await fetchTabCSV(tabName); if (v) return v; } catch (e) { /* fall through */ }
+    try { const v = await fetchTabJSONP(tabName); if (v && v.length) return v; } catch (e) { /* both failed */ }
+    return null;
+  }
+
+  function ragClass(raw) {
+    const t = (raw || '').toLowerCase();
+    if (/on\s*track/.test(t)) return 'green';
+    if (/at\s*risk/.test(t)) return 'amber';
+    if (/off\s*track|behind|delayed|not\s*on\s*track/.test(t)) return 'red';
+    if (/red|🔴/.test(t)) return 'red';
+    if (/amber|orange|yellow|🟡|🟠/.test(t)) return 'amber';
+    if (/green|🟢/.test(t)) return 'green';
+    return '';
+  }
+
+  function normLabel(s) {
+    return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function labelsMatch(cellText, knownLabel) {
+    const a = normLabel(cellText), b = normLabel(knownLabel);
+    if (!a || !b) return false;
+    const anchor = b.slice(0, Math.min(14, b.length)); // first ~14 normalized chars is plenty distinctive per label
+    return a.includes(anchor);
+  }
+
+  // Builds a fresh, self-contained display object straight from parsed sheet rows — no merging with prior state.
+  // Rows are located by matching each field's known label text rather than trusting fixed row numbers, since the
+  // live export's row alignment has proven to drift from what a static template inspection would suggest.
+  function buildDisplayState(rows, tabName) {
+    const cell = (r, c) => (rows[r - 1] && rows[r - 1][c] !== undefined ? String(rows[r - 1][c]).trim() : '');
+    const findRow = (labelCol, label, fromRow, toRow) => {
+      for (let r = fromRow; r <= toRow; r++) {
+        if (labelsMatch(cell(r, labelCol), label)) return r;
+      }
+      return null;
+    };
+
+    // ---- KPI: each metric's row is wherever its label actually is, searched within its section's label column ----
+    const kpi = {};
+    KPI_SECTIONS.forEach((sec, i) => {
+      const labelCol = i * 2, valueCol = labelCol + 1;
+      let searchFrom = 2;
+      kpi[sec.key] = sec.metrics.map(([key, label]) => {
+        const row = findRow(labelCol, label, searchFrom, searchFrom + 8) || searchFrom;
+        searchFrom = row + 1;
+        return { key, label, value: cell(row, valueCol) };
+      });
+    });
+
+    // ---- Owner blocks: find each section's header row (RAG Status column header), then bullets in sequence ----
+    const OWNER_COL = 0, LABEL_COL = 1, RAG_COL = 6, COMMENT_COL = 7, LAST_COL = 11;
+    const readComment = row => {
+      const parts = [];
+      for (let c = COMMENT_COL; c <= LAST_COL; c++) {
+        const v = cell(row, c);
+        if (v) parts.push(v);
+      }
+      return parts.join(' ');
+    };
+    const isChecked = raw => /^(true|1|yes|✓|checked)$/i.test((raw || '').trim());
+    const owner = {};
+    const needToKnow = [];
+    let cursor = 6; // KPI grid ends around here; first owner header should appear shortly after
+    let safetyLtiValue = '';
+    OWNER_GROUPS.flatMap(g => g.sections).forEach(sec => {
+      let headerRow = null;
+      for (let r = cursor; r <= cursor + 12; r++) {
+        if (normLabel(cell(r, RAG_COL)).includes('rag')) { headerRow = r; break; }
+      }
+      // Need to Know is a checkbox column added after Comments — locate it from this section's own
+      // header row so it's found regardless of exactly which column it landed in.
+      let ntkCol = 12;
+      if (headerRow) {
+        for (let c = LAST_COL + 1; c <= LAST_COL + 6; c++) {
+          if (normLabel(cell(headerRow, c)).includes('need to know')) { ntkCol = c; break; }
+        }
+      }
+      let rowCursor = (headerRow || cursor) + 1;
+      const ownerName = cell(rowCursor, OWNER_COL) || sec.defaultOwner;
+      const bullets = sec.bullets.map(label => {
+        // A blank label means a freeform row with no fixed prompt (e.g. People's extra entries) —
+        // there's no text to search for, so just take the next row in sequence.
+        const row = label ? (findRow(LABEL_COL, label, rowCursor, rowCursor + 10) || rowCursor) : rowCursor;
+        rowCursor = row + 1;
+        const value = readComment(row);
+        if (sec.key === 'safety_o' && /lti/i.test(label)) safetyLtiValue = value;
+        if (value && isChecked(cell(row, ntkCol))) {
+          needToKnow.push({ section: sec.title, label: label || sec.title, value });
+        }
+        return { label, value, rag: ragClass(cell(row, RAG_COL)) };
+      });
+      owner[sec.key] = { ownerName, bullets };
+      cursor = rowCursor;
+    });
+
+    let ltiDays = null;
+    const ltiMatch = safetyLtiValue.match(/(\d+)\s*Days?\s*LTI\s*Free/i);
+    if (ltiMatch) ltiDays = parseInt(ltiMatch[1], 10);
+
+    // ---- Wins: find the "Wins" header, then read the following rows as free-text entries ----
+    let winsHeaderRow = null;
+    for (let r = cursor; r <= cursor + 10; r++) {
+      if (normLabel(cell(r, 0)).includes('wins') || normLabel(cell(r, 1)).includes('wins')) { winsHeaderRow = r; break; }
+    }
+    const winsStart = (winsHeaderRow || cursor) + 1;
+    const winCell = r => cell(r, 1) || cell(r, 0); // win text lives in column B, like every other free-text row
+    const winsLeft = [], winsRight = [];
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsLeft.push(winCell(winsStart + i));
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsRight.push(winCell(winsStart + WINS_COUNT / 2 + i));
+
+    return { tabName, kpi, owner, ltiDays, winsLeft, winsRight, needToKnow, syncedAt: new Date().toISOString() };
+  }
+
+
+  // ================= Weekly Ops =================
+  const SECTION_ORDER = OWNER_GROUPS.flatMap(g => g.sections).map(s => ({ title: s.title, color: s.color, icon: s.icon }));
+  const COLOR_HEX = {
+    'var(--safety)': '#47D7AC', 'var(--qc)': '#7566A0', 'var(--brew)': '#99D6EA',
+    'var(--packaging)': '#FDAA63', 'var(--maintenance)': '#FFD637', 'var(--logistics)': '#8C93D8',
+    'var(--engineering)': '#8BC48A', 'var(--customer)': '#F2937D', 'var(--planning)': '#B295D1', 'var(--people)': '#6C7A89',
+  };
+  const DAYS_BACK = 6; // the chosen day plus the 6 before it = 7 days
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dayLabel = d => `${DOW[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
+  const toYmd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  function parseYmd(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d) ? null : d;
+  }
+  function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+
+  const app = document.getElementById('app');
+  let endDate = parseYmd(new URLSearchParams(location.search).get('date')) || new Date();
+  let weekData = null;      // { days: [{date,label,tabName|null,items:[]}], sections: [{title,color,icon,items:[{dayLabel,label,value}]}] }
+  let summaries = {};       // section title -> text
+  let summaryState = 'idle'; // idle | loading | done | failed
+  let summaryError = '';
+  let loading = false;
+  let progress = '';
+
+  async function fetchDay(date) {
+    for (const name of tabNameCandidates(date)) {
+      const rows = await fetchTabRows(name);
+      if (rows) return { name, state: buildDisplayState(rows, name) };
+    }
+    return null;
+  }
+
+  async function loadWeek() {
+    loading = true; summaries = {}; summaryState = 'idle'; summaryError = ''; weekData = null;
+    const dates = [];
+    for (let i = DAYS_BACK; i >= 0; i--) { const d = new Date(endDate); d.setDate(d.getDate() - i); dates.push(d); }
+    const days = dates.map(d => ({ date: d, label: dayLabel(d), tabName: null, items: [] }));
+    let done = 0, next = 0;
+    progress = `Reading the sheet… 0 of ${days.length} days`;
+    render();
+    async function worker() {
+      while (next < days.length) {
+        const i = next++;
+        try {
+          const r = await fetchDay(days[i].date);
+          if (r) { days[i].tabName = r.name; days[i].items = r.state.needToKnow || []; }
+        } catch (e) { /* treat as missing */ }
+        done++; progress = `Reading the sheet… ${done} of ${days.length} days`; render();
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]); // at most 3 tabs in flight at once
+    const sections = SECTION_ORDER.map(s => {
+      const items = [];
+      days.forEach(d => d.items.filter(it => it.section === s.title).forEach(it => items.push({ dayLabel: d.label, label: it.label, value: it.value })));
+      return { title: s.title, color: s.color, icon: s.icon, items };
+    }).filter(s => s.items.length);
+    weekData = { days, sections };
+    loading = false; progress = '';
+    render();
+    if (sections.length) await summarise(false);
+  }
+
+  const cacheKey = () => 'weekly_ai_' + JSON.stringify((weekData ? weekData.sections : []).map(s => [s.title, s.items.map(i => [i.dayLabel, i.label, i.value])]));
+  function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0); }
+
+  async function summarise(force) {
+    if (!weekData || !weekData.sections.length) return;
+    const key = 'weekly_ai_' + hashStr(cacheKey());
+    if (!force) {
+      try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && c.summaries) { summaries = c.summaries; summaryState = 'done'; render(); return; } } catch (e) {}
+    }
+    summaryState = 'loading'; summaryError = ''; render();
+    try {
+      const res = await fetch('/api/summarize', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections: weekData.sections.map(s => ({ title: s.title, items: s.items })) }),
+      });
+      if (res.redirected || res.status === 401) { location.href = '/login'; return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      summaries = data.summaries || {};
+      const got = Object.values(summaries).filter(Boolean).length;
+      if (!got) throw new Error('No summary returned');
+      summaryState = 'done';
+      try { localStorage.setItem(key, JSON.stringify({ summaries })); } catch (e) {}
+    } catch (e) {
+      summaryState = 'failed'; summaryError = e.message || 'unknown error';
+    }
+    render();
+  }
+
+  // ---------------- Email ----------------
+  const LOGO_PNG = 'data:image/png;base64,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';
+  const rangeText = () => `${dayLabel(weekData.days[0].date)} – ${dayLabel(weekData.days[weekData.days.length - 1].date)} ${endDate.getFullYear()}`;
+  function emailSection(sec) {
+    const hex = COLOR_HEX[sec.color] || '#14161a';
+    const sum = summaries[sec.title];
+    const th = 'padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;';
+    const rows = [];
+    if (sum) rows.push({ f: 'Week summary', v: sum, bold: true });
+    sec.items.forEach(it => rows.push({ f: `${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}`, v: it.value }));
+    const dataRows = rows.map((r, i) => `
+      <tr>
+        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.f)}</td>
+        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.v)}</td>
+      </tr>`).join('');
+    return `
+      <tr><td style="height:20px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td width="6" style="background:${hex};border-radius:2px;line-height:1px;font-size:1px;">&nbsp;</td>
+          <td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:13.5px;color:#14161a;text-transform:uppercase;letter-spacing:.03em;">${escHtml(sec.title)}</td>
+        </tr></table>
+      </td></tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr><td>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:8px;overflow:hidden;">
+          <tr><td style="${th}">Field</td><td style="${th}">Update</td></tr>
+          ${dataRows}
+        </table>
+      </td></tr>`;
+  }
+  function buildEmailHtml() {
+    const covered = weekData.days.filter(d => d.tabName).map(d => d.label).join(', ') || 'none';
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:16px;max-width:900px;width:100%;">
+      <tr><td style="padding:16px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="40%"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:30px;"><img src="${LOGO_PNG}" width="30" height="30" alt="Balter" style="display:block;width:30px;height:30px;"></td>
+                <td style="padding-left:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:#14161a;line-height:1.15;">Weekly Ops</td></tr>
+                  <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9da3;padding-top:1px;">Balter Brewing</td></tr></table>
+                </td>
+              </tr></table></td>
+              <td width="60%" align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(rangeText())}</td>
+            </tr></table>
+          </td></tr>
+          <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
+          ${weekData.sections.map(emailSection).join('')}
+        </table>
+      </td></tr>
+    </table>`;
+  }
+  function buildEmailPlainText() {
+    const lines = [`WEEKLY OPS — ${rangeText()}`, ''];
+    weekData.sections.forEach(sec => {
+      lines.push(sec.title.toUpperCase());
+      if (summaries[sec.title]) lines.push(`  Week summary: ${summaries[sec.title]}`);
+      sec.items.forEach(it => lines.push(`  - ${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}: ${it.value}`));
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+  let toastTimer;
+  function showToast(msg) {
+    let t = document.getElementById('toastMsg');
+    if (!t) { t = document.createElement('div'); t.id = 'toastMsg'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  function showEmailCopyFallback(html) {
+    const backdrop = el('div', 'modal-backdrop');
+    const modal = el('div', 'modal');
+    const closeBtn = el('button', 'close-x', '✕');
+    closeBtn.addEventListener('click', () => backdrop.remove());
+    modal.appendChild(closeBtn);
+    modal.appendChild(el('h2', '', "Couldn't copy automatically"));
+    modal.appendChild(el('div', 'sub', "Your browser blocked the automatic copy. Click inside the box below, select all (Ctrl/Cmd+A), and copy (Ctrl/Cmd+C) — then paste into your email."));
+    const preview = document.createElement('div');
+    preview.contentEditable = 'true';
+    preview.style.cssText = 'border:1px solid #E5E7EB;border-radius:10px;padding:14px;max-height:50vh;overflow:auto;';
+    preview.innerHTML = html;
+    modal.appendChild(preview);
+    backdrop.appendChild(modal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.remove(); });
+    document.body.appendChild(backdrop);
+  }
+  async function exportEmail() {
+    if (!weekData || !weekData.sections.length) { showToast('Nothing to export yet'); return false; }
+    const html = buildEmailHtml(), text = buildEmailPlainText();
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+        showToast('Email copied — ready to paste');
+        return true;
+      }
+    } catch (err) { console.error('Clipboard write failed', err); }
+    showEmailCopyFallback(html);
+    return false;
+  }
+
+  // ---------------- Rendering ----------------
+  const REFRESH_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#47D7AC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/></svg>`;
+  function render() {
+    app.innerHTML = '';
+    const frame = el('div', 'frame');
+    app.appendChild(frame);
+
+    const topbar = el('div', 'topbar');
+    const brand = el('div', 'brand');
+    brand.innerHTML = `<div class="brand__mark"><svg viewBox="0 0 161 161" class="brand__logo" xmlns="http://www.w3.org/2000/svg"><path fill="#47D7AC" d="M136.3,70.4l-9.4-9.4c-1.6-1.6-4.3-1.6-6,0-1.6,1.6-1.6,4.3,0,6l2.3,2.3c-9.6,13.2-25.2,21.7-42.7,21.7s-33.1-8.6-42.7-21.8l2.3-2.3c1.6-1.6,1.6-4.3,0-6-1.6-1.6-4.3-1.6-6,0l-9.4,9.4c-1.6,1.6-1.6,4.3,0,6,.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2l1.1-1.1c11.2,14.7,28.9,24.2,48.7,24.2s37.5-9.5,48.7-24.2l1.1,1.1c.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2c1.6-1.6,1.6-4.3,0-6"/><path fill="#47D7AC" d="M152.5,8.5v144H8.5V8.5h144M161,0H0v161h161V0h0Z"/></svg></div><div class="brand__text"><span class="brand__title">Weekly Ops</span><span class="brand__sub">Balter Brewing</span></div>`;
+    topbar.appendChild(brand);
+
+    const back = document.createElement('a');
+    back.href = '/'; back.className = 'btn ghost weekly-btn'; back.textContent = '← Daily 9AM';
+    topbar.appendChild(back);
+
+    const datePill = el('div', 'date-pill');
+    const picker = document.createElement('input');
+    picker.type = 'date'; picker.value = toYmd(endDate); picker.max = toYmd(new Date());
+    picker.className = 'date-input'; picker.title = 'Week ending';
+    picker.addEventListener('change', () => { const d = parseYmd(picker.value); if (d) { endDate = d; history.replaceState(null, '', '?date=' + toYmd(d)); loadWeek(); } });
+    datePill.appendChild(picker);
+    const rangeSpan = el('span', '', weekData ? escHtml(rangeText()) : '');
+    datePill.appendChild(rangeSpan);
+    const refresh = document.createElement('button');
+    refresh.className = 'refresh-icon-btn'; refresh.title = 'Reload from sheet'; refresh.innerHTML = REFRESH_SVG; refresh.disabled = loading;
+    refresh.addEventListener('click', () => loadWeek());
+    datePill.appendChild(refresh);
+    topbar.appendChild(datePill);
+
+    const right = el('div', 'topbar-right');
+    const emailBtn = document.createElement('button');
+    emailBtn.className = 'btn primary'; emailBtn.textContent = 'Build weekly email'; emailBtn.disabled = loading || !weekData || !weekData.sections.length;
+    emailBtn.addEventListener('click', async () => {
+      const ok = await exportEmail();
+      if (ok) { emailBtn.textContent = 'Copied to clipboard!'; setTimeout(() => { emailBtn.textContent = 'Build weekly email'; }, 2500); }
+    });
+    right.appendChild(emailBtn);
+    const logout = document.createElement('a');
+    logout.href = '/logout'; logout.className = 'btn ghost'; logout.style.cssText = 'padding:8px 14px;font-size:12px;text-decoration:none;'; logout.textContent = 'Log out';
+    right.appendChild(logout);
+    topbar.appendChild(right);
+    frame.appendChild(topbar);
+
+    if (loading || !weekData) {
+      frame.appendChild(el('div', 'empty-state', `<div class="big">📋</div><div>${escHtml(progress || 'Loading…')}</div>`));
+      return;
+    }
+
+    // Day coverage strip
+    const strip = el('div', 'day-strip');
+    weekData.days.forEach(d => {
+      const n = d.items.length;
+      const chip = el('div', 'day-chip' + (d.tabName ? '' : ' missing'),
+        `<b>${escHtml(d.label)}</b><span>${d.tabName ? (n ? n + ' point' + (n > 1 ? 's' : '') : 'no points') : 'no tab'}</span>`);
+      strip.appendChild(chip);
+    });
+    frame.appendChild(strip);
+
+    // AI status line
+    if (weekData.sections.length) {
+      const status = el('div', 'ai-status');
+      if (summaryState === 'loading') status.innerHTML = `<span class="spinner"></span> Summarising with AI…`;
+      else if (summaryState === 'failed') status.innerHTML = `⚠️ AI summary unavailable (${escHtml(summaryError)}). The original points are shown below.`;
+      else if (summaryState === 'done') status.innerHTML = `✨ Summaries written by AI from the points below — check against the source points.`;
+      const regen = el('button', 'btn ghost', summaryState === 'failed' ? 'Try again' : 'Regenerate');
+      regen.style.cssText = 'padding:6px 12px;font-size:12px;margin-left:10px;';
+      regen.disabled = summaryState === 'loading';
+      regen.addEventListener('click', () => summarise(true));
+      if (summaryState !== 'idle') { status.appendChild(regen); frame.appendChild(status); }
+    }
+
+    if (!weekData.sections.length) {
+      frame.appendChild(el('div', 'empty-state', `<div class="big">🗒️</div><div>No Executive Summary points were ticked in the 7 days ending ${escHtml(dayLabel(endDate))}.</div>`));
+      return;
+    }
+
+    const grid = el('div', 'weekly-grid');
+    weekData.sections.forEach(sec => {
+      const card = el('div', 'wk-card');
+      card.style.setProperty('--accent', sec.color);
+      const head = el('div', 'wk-head', `<span class="wk-ico">${escHtml(sec.icon)}</span><span class="wk-title">${escHtml(sec.title)}</span><span class="wk-count">${sec.items.length} point${sec.items.length > 1 ? 's' : ''}</span>`);
+      card.appendChild(head);
+      const body = el('div', 'wk-body');
+      if (summaries[sec.title]) body.appendChild(el('div', 'wk-summary', `<span class="ai-tag">AI summary</span>${escHtml(summaries[sec.title])}`));
+      else if (summaryState === 'loading') body.appendChild(el('div', 'wk-summary pending', 'Summarising…'));
+      const list = el('div', 'wk-points');
+      sec.items.forEach(it => {
+        list.appendChild(el('div', 'wk-point', `<span class="wk-day">${escHtml(it.dayLabel)}</span><span class="wk-text">${it.label && it.label !== sec.title ? `<b>${escHtml(it.label)}:</b> ` : ''}${escHtml(it.value)}</span>`));
+      });
+      body.appendChild(list);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    frame.appendChild(grid);
+  }
+
+  loadWeek();
+
+})();
+</script>
+</body>
+</html>

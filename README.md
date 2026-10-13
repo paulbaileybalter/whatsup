@@ -7,6 +7,16 @@ setup steps. Quick reference:
   `/login`, `/logout`, and falls through to the static site in `public/`
   once authenticated.
 - `public/index.html` — the dashboard itself (syncs from the 9am Google Sheet).
+- `public/weekly.html` — **Weekly Ops** page (linked from the "Weekly Executive Summary"
+  button on the daily page). Reads the chosen day plus the 6 days before it from the
+  sheet, groups the ticked Executive Summary points by section, shows an AI summary per
+  section above the original points, and builds the weekly email (same format as the
+  daily one). Days without a tab (e.g. weekends) are skipped and shown as "no tab".
+- `POST /api/summarize` — password-gated Worker route that writes the AI summaries.
+  By default it uses Workers AI via the `AI` binding in `wrangler.jsonc` (no key needed).
+  To use Claude instead, add a Worker Secret `ANTHROPIC_API_KEY` (optionally a Text
+  variable `ANTHROPIC_MODEL`); it is used automatically when present. Keys never reach
+  the browser. If AI fails, the page still shows the original points.
 - Secrets required in the Worker (Settings → Variables and Secrets, type
   **Secret**): `SITE_PASSWORD`, `SESSION_SECRET`.
 

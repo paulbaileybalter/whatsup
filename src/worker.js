@@ -112,6 +112,78 @@ function loginPageHtml(showError) {
 </html>`;
 }
 
+// ---------------- AI summaries (/api/summarize) ----------------
+// Runs server-side only, behind the same session-cookie check as everything else.
+// Uses Anthropic if the ANTHROPIC_API_KEY Secret is set, otherwise Workers AI (the `AI` binding).
+// No key is ever sent to the browser.
+
+const SUMMARY_SYSTEM = [
+  "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting for a weekly operations review.",
+  "You get one section (e.g. QC, Packaging) with dated points. Write a short plain-text summary of the week for that section: 2-4 sentences, Australian English.",
+  "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
+  "No headings, bullets, markdown or preamble - just the summary text.",
+].join(' ');
+
+function sectionPrompt(sec) {
+  const lines = sec.items.map(i => `- ${i.dayLabel}${i.label && i.label !== sec.title ? ' (' + i.label + ')' : ''}: ${i.value}`);
+  return `Section: ${sec.title}\nPoints:\n${lines.join('\n')}`;
+}
+
+async function summariseOne(env, sec) {
+  const prompt = sectionPrompt(sec);
+  if (env.ANTHROPIC_API_KEY) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
+        max_tokens: 400, system: SUMMARY_SYSTEM,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) throw new Error('Anthropic API ' + res.status);
+    const data = await res.json();
+    return ((data.content || []).map(b => b.text || '').join('')).trim();
+  }
+  if (env.AI) {
+    const out = await env.AI.run(env.AI_MODEL || '@cf/meta/llama-3.1-8b-instruct', {
+      messages: [{ role: 'system', content: SUMMARY_SYSTEM }, { role: 'user', content: prompt }],
+      max_tokens: 400,
+    });
+    return String((out && out.response) || '').trim();
+  }
+  throw new Error('No AI provider configured');
+}
+
+async function handleSummarize(request, env) {
+  const json = (obj, status) => new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  if (!env.AI && !env.ANTHROPIC_API_KEY) return json({ error: 'No AI provider configured on the Worker' }, 501);
+  const raw = await request.text();
+  if (raw.length > 100000) return json({ error: 'Request too large' }, 413);
+  let body;
+  try { body = JSON.parse(raw); } catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  const sections = Array.isArray(body.sections) ? body.sections.slice(0, 12) : [];
+  const clean = sections.map(s => ({
+    title: String((s && s.title) || '').slice(0, 60),
+    items: (Array.isArray(s && s.items) ? s.items : []).slice(0, 60).map(i => ({
+      dayLabel: String((i && i.dayLabel) || '').slice(0, 30),
+      label: String((i && i.label) || '').slice(0, 200),
+      value: String((i && i.value) || '').slice(0, 1500),
+    })).filter(i => i.value),
+  })).filter(s => s.title && s.items.length);
+  if (!clean.length) return json({ error: 'No sections to summarise' }, 400);
+
+  const summaries = {};
+  const errors = [];
+  await Promise.all(clean.map(async sec => {
+    try { summaries[sec.title] = await summariseOne(env, sec); }
+    catch (e) { errors.push(sec.title + ': ' + (e.message || 'failed')); }
+  }));
+  if (!Object.values(summaries).some(Boolean)) return json({ error: errors[0] || 'AI request failed' }, 502);
+  return json({ summaries, partialErrors: errors });
+}
+
 // ---------------- Worker ----------------
 
 export default {
@@ -153,7 +225,10 @@ export default {
       return new Response(null, { status: 302, headers: { Location: '/login' } });
     }
 
-    // Authenticated — serve the static site
+    // Authenticated
+    if (url.pathname === '/api/summarize') return handleSummarize(request, env);
+
+    // Serve the static site
     return env.ASSETS.fetch(request);
   },
 };
