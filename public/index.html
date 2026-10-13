@@ -115,7 +115,7 @@
   .ntk-line { font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
   .ntk-section { display: inline-block; background: var(--slate); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: middle; font-family: var(--font-body); }
   .ntk-label { font-weight: 700; color: var(--ink); }
-  .ntk-value { color: var(--ink-soft); }
+  .ntk-value { color: var(--ink); }
   .wins-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; padding: 4px 16px 16px; }
   .win-line { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: 12.5px; }
   .win-line .star { color: #b8860b; font-size: 13px; margin-top: 1px; }
@@ -705,7 +705,7 @@
       const kpBody = el('div', 'ntk-body');
       current.needToKnow.forEach(item => {
         const row = el('div', 'ntk-line');
-        row.innerHTML = `<span class="ntk-section">${escapeHtml(item.section)}</span><span class="ntk-label">${escapeHtml(item.label)}:</span> <span class="ntk-value">${escapeHtml(item.value)}</span>`;
+        row.innerHTML = `<span class="ntk-section">${escapeHtml(item.section)}</span><span class="ntk-value">${escapeHtml(item.value)}</span>`;
         kpBody.appendChild(row);
       });
       kpCard.appendChild(kpBody);
@@ -974,9 +974,9 @@
     const winsLeft = current.winsLeft.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
     const winsRight = current.winsRight.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
     const ntkItems = (current.needToKnow || []).map(item => `
-      <tr><td style="padding:5px 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#55585F;line-height:1.4;">
+      <tr><td style="padding:5px 0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#14161a;line-height:1.4;">
         <span style="display:inline-block;background:#6C7A89;color:#ffffff;font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;">${escHtml(item.section)}</span>
-        <b>${escHtml(item.label)}:</b> ${escHtml(item.value)}
+        ${escHtml(item.value)}
       </td></tr>`).join('');
     const emailCard = (title, icon, rowsHtml) => `
       <tr><td style="height:14px;"></td></tr>
@@ -1041,7 +1041,7 @@
     if (dSummary && dSummary.text) { lines.push('EXECUTIVE SUMMARY'); lines.push('  ' + dSummary.text); lines.push(''); }
     if (current.needToKnow && current.needToKnow.length) {
       lines.push('KEY POINTS');
-      current.needToKnow.forEach(item => lines.push(`  - [${item.section}] ${item.label}: ${item.value}`));
+      current.needToKnow.forEach(item => lines.push(`  - [${item.section}] ${item.value}`));
       lines.push('');
     }
     lines.push('WINS');

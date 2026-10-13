@@ -607,7 +607,7 @@
     const th = 'padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;';
     const rows = [];
     if (sum) rows.push({ f: 'Week summary', v: sum, bold: true });
-    visibleItems(sec).forEach(it => rows.push({ f: `${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}`, v: it.value }));
+    visibleItems(sec).forEach(it => rows.push({ f: it.dayLabel, v: it.value }));
     const dataRows = rows.map((r, i) => `
       <tr>
         <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.f)}</td>
@@ -657,7 +657,7 @@
     weekData.sections.filter(sc => visibleItems(sc).length).forEach(sec => {
       lines.push(sec.title.toUpperCase());
       if (summaryText(sec.title)) lines.push(`  Week summary: ${summaryText(sec.title)}`);
-      visibleItems(sec).forEach(it => lines.push(`  - ${it.dayLabel}${it.label && it.label !== sec.title ? ' — ' + it.label : ''}: ${it.value}`));
+      visibleItems(sec).forEach(it => lines.push(`  - ${it.dayLabel}: ${it.value}`));
       lines.push('');
     });
     return lines.join('\n');
@@ -837,7 +837,7 @@
 
       const list = el('div', 'wk-points');
       vis.forEach(it => {
-        const row = el('div', 'wk-point', `<span class="wk-day">${escHtml(it.dayLabel)}</span><span class="wk-text">${it.label && it.label !== sec.title ? `<b>${escHtml(it.label)}:</b> ` : ''}${escHtml(it.value)}</span>`);
+        const row = el('div', 'wk-point', `<span class="wk-day">${escHtml(it.dayLabel)}</span><span class="wk-text">${escHtml(it.value)}</span>`);
         const x = el('button', 'wk-x', '✕'); x.title = 'Remove this point from the weekly summary and email';
         x.addEventListener('click', () => { state.removed[it.id] = true; saveState(); render(); });
         row.appendChild(x);
