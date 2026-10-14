@@ -57,6 +57,8 @@
   .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
   .lti-pill { justify-self: end; display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 18px; background: var(--paper); }
   .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 16px; font-size: 12.5px; }
+  .topbar-nav { flex: 1; display: flex; align-items: center; justify-content: space-evenly; gap: 10px; flex-wrap: wrap; }
+  .btn.weekly-btn.current { background: var(--ink); color: #fff; border-color: var(--ink); pointer-events: none; }
   .topbar-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
   .gmail-icon-btn { width: 34px; height: 34px; border-radius: 10px; background: transparent; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .12s ease, border-color .12s ease; }
   .gmail-icon-btn:hover { background: rgba(0,0,0,.04); border-color: var(--ink); }
@@ -169,7 +171,7 @@
     .owner-grid.g3, .owner-grid.g4 { grid-template-columns: repeat(2, 1fr); }
   }
   .btn, .lti-pill { white-space: nowrap; }
-  @media (max-width: 1180px) { .topbar { display: flex; flex-wrap: wrap; justify-content: center; } }
+  @media (max-width: 1180px) { .topbar { flex-wrap: wrap; } .topbar-nav { flex-basis: 100%; } }
   @media (max-width: 600px) {
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .owner-grid.g3, .owner-grid.g4 { grid-template-columns: 1fr; }
@@ -897,9 +899,11 @@
     brand.innerHTML = `<div class="brand__mark"><svg viewBox="0 0 161 161" class="brand__logo" xmlns="http://www.w3.org/2000/svg"><path fill="#47D7AC" d="M136.3,70.4l-9.4-9.4c-1.6-1.6-4.3-1.6-6,0-1.6,1.6-1.6,4.3,0,6l2.3,2.3c-9.6,13.2-25.2,21.7-42.7,21.7s-33.1-8.6-42.7-21.8l2.3-2.3c1.6-1.6,1.6-4.3,0-6-1.6-1.6-4.3-1.6-6,0l-9.4,9.4c-1.6,1.6-1.6,4.3,0,6,.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2l1.1-1.1c11.2,14.7,28.9,24.2,48.7,24.2s37.5-9.5,48.7-24.2l1.1,1.1c.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2c1.6-1.6,1.6-4.3,0-6"/><path fill="#47D7AC" d="M152.5,8.5v144H8.5V8.5h144M161,0H0v161h161V0h0Z"/></svg></div><div class="brand__text"><span class="brand__title">Weekly Ops</span><span class="brand__sub">Balter Brewing</span></div>`;
     topbar.appendChild(brand);
 
-    const back = document.createElement('a');
-    back.href = '/'; back.className = 'btn ghost weekly-btn'; back.textContent = '← Daily 9AM';
-    topbar.appendChild(back);
+    const nav = el('div', 'topbar-nav');
+    topbar.appendChild(nav);
+    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + toYmd(endDate), 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter']].forEach(([t, h, k]) => {
+      const a = document.createElement('a'); a.href = h; a.className = 'btn ghost weekly-btn' + (k === 'weekly' ? ' current' : ''); a.textContent = t; nav.appendChild(a);
+    });
 
     const datePill = el('div', 'date-pill');
     const picker = document.createElement('input');
@@ -909,11 +913,7 @@
     datePill.appendChild(picker);
     const rangeSpan = el('span', '', weekData ? escHtml(rangeText()) : '');
     datePill.appendChild(rangeSpan);
-    const refresh = document.createElement('button');
-    refresh.className = 'refresh-icon-btn'; refresh.title = 'Reload from sheet'; refresh.innerHTML = REFRESH_SVG; refresh.disabled = loading;
-    refresh.addEventListener('click', () => loadWeek());
-    datePill.appendChild(refresh);
-    topbar.appendChild(datePill);
+    nav.appendChild(datePill);
 
     const right = el('div', 'topbar-right');
     const emailBtn = document.createElement('button');
@@ -926,7 +926,8 @@
     const logout = document.createElement('a');
     logout.href = '/logout'; logout.className = 'btn ghost'; logout.style.cssText = 'padding:8px 14px;font-size:12px;text-decoration:none;'; logout.textContent = 'Log out';
     right.appendChild(logout);
-    topbar.appendChild(right);
+    nav.appendChild(emailBtn);
+    nav.appendChild(logout);
     frame.appendChild(topbar);
 
     if (loading || !weekData) {
