@@ -233,8 +233,8 @@ const NL_TASKS = {
     prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
   },
   month: {
-    system: NL_COMMON + ' Task: write a summary of everything people have accomplished around the brewery this month, for the newsletter. 120 to 180 words, one or two short paragraphs, flowing prose with no bullets, headings or markdown. Cover all teams that appear, lead with the biggest achievements, and mention people by name where the points name them. Refer to areas as teams (for example "the QC Team"), never as sections or fields.',
-    tokens: 700,
+    system: NL_COMMON + ' Task: write a summary of everything people have accomplished around the brewery this month, for the newsletter. Under 100 words (aim for 80 to 95), a single short paragraph, flowing prose with no bullets, headings or markdown. Do not try to reference everything or every department. Pick out just a few of the more uplifting things that happened (achievements, milestones, good news, people going above and beyond) and focus on those; leave out routine or negative items. Lead with the biggest achievements, and mention people by name where the points name them. Refer to areas as teams (for example "the QC Team"), never as sections or fields.',
+    tokens: 400,
     prompt: (b, pts) => `Month: ${b.month}\nPoints:\n${pts}`,
   },
   person: {
