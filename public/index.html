@@ -40,7 +40,7 @@
   .topbar {
     display: flex; align-items: center; gap: 16px;
     margin-bottom: 18px; background: var(--canvas); border: 1px solid var(--line-soft);
-    border-radius: var(--radius-lg); padding: 12px 20px; box-shadow: var(--shadow-card);
+    border-radius: var(--radius-lg); padding: 12px 16px; box-shadow: var(--shadow-card);
   }
   .date-pill { justify-self: center; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; font-family: var(--font-display); }
   .date-pill .ico { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1.5px solid var(--line); cursor: pointer; font-family: inherit; padding: 0; flex: 0 0 auto; transform: rotate(-3deg); }
@@ -55,9 +55,12 @@
   .brand__text { display: flex; flex-direction: column; line-height: 1.15; }
   .brand__title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); white-space: nowrap; }
   .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
-  .lti-pill { justify-self: end; display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 18px; background: var(--paper); }
-  .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 16px; font-size: 12.5px; }
-  .topbar-nav { flex: 1; display: flex; align-items: center; justify-content: space-evenly; gap: 10px; flex-wrap: wrap; }
+  .wx-pill { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 11px; background: var(--paper); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--ink); }
+  .wx-pill .wx-ico { font-size: 18px; line-height: 1; }
+  .wx-pill .wx-sub { font-size: 10.5px; font-weight: 600; color: var(--ink-soft); display: block; line-height: 1.2; }
+  .lti-pill { justify-self: end; display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; background: var(--paper); }
+  .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 13px; font-size: 12.5px; }
+  .topbar-nav { flex: 1; display: flex; align-items: center; justify-content: space-evenly; gap: 6px; flex-wrap: wrap; }
   .topbar-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
   .gmail-icon-btn { width: 34px; height: 34px; border-radius: 10px; background: transparent; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .12s ease, border-color .12s ease; }
   .gmail-icon-btn:hover { background: rgba(0,0,0,.04); border-color: var(--ink); }
@@ -583,6 +586,14 @@
     newsletterBtn.textContent = 'Newsletter';
     nav.appendChild(newsletterBtn);
 
+    // weather for the day shown (Gold Coast), fills in by itself
+    const wx = weatherFor(activeDate);
+    const wxPill = el('div', 'wx-pill', wx
+      ? `<span class="wx-ico">${wx.icon}</span><span>${escapeHtml(wx.desc)}<span class="wx-sub">${escapeHtml(wxText(wx))}</span></span>`
+      : `<span class="wx-ico">🌡️</span><span>Weather<span class="wx-sub">Gold Coast</span></span>`);
+    wxPill.title = 'Gold Coast forecast (Open-Meteo)';
+    nav.appendChild(wxPill);
+
     // calendar picker + date
     const datePill = el('div', 'date-pill');
     datePill.innerHTML = `<span>${escapeHtml(current.tabName)}</span>`;
@@ -972,7 +983,107 @@
         </table>
       </td></tr>`;
   }
+
+  // ---------------- Weather (Open-Meteo, Gold Coast; no key needed) ----------------
+  const WX_LAT = -28.0167, WX_LON = 153.4;
+  const WX_CODES = {0:['☀️','Sunny'],1:['🌤️','Mostly sunny'],2:['⛅','Partly cloudy'],3:['☁️','Cloudy'],45:['🌫️','Fog'],48:['🌫️','Fog'],51:['🌦️','Light drizzle'],53:['🌦️','Drizzle'],55:['🌦️','Heavy drizzle'],56:['🌦️','Freezing drizzle'],57:['🌦️','Freezing drizzle'],61:['🌧️','Light rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],66:['🌧️','Freezing rain'],67:['🌧️','Freezing rain'],71:['🌨️','Light snow'],73:['🌨️','Snow'],75:['🌨️','Heavy snow'],77:['🌨️','Snow'],80:['🌦️','Showers'],81:['🌦️','Showers'],82:['⛈️','Heavy showers'],85:['🌨️','Snow showers'],86:['🌨️','Snow showers'],95:['⛈️','Thunderstorms'],96:['⛈️','Thunderstorms'],99:['⛈️','Thunderstorms']};
+  const wxCache = {}; // ymd -> {status:'loading'|'ok'|'err', ...}
+  const dateKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  function weatherFor(d) {
+    const key = dateKey(d);
+    const c = wxCache[key];
+    if (c) return c.status === 'ok' ? c : null;
+    wxCache[key] = { status: 'loading' };
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + WX_LAT + '&longitude=' + WX_LON +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=Australia%2FBrisbane&start_date=' + key + '&end_date=' + key)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(j => {
+        const dd = j.daily; if (!dd || !dd.time || !dd.time.length) throw new Error('no data');
+        const code = dd.weather_code[0], m = WX_CODES[code] || ['🌡️', 'Weather'];
+        wxCache[key] = { status: 'ok', icon: m[0], desc: m[1], max: Math.round(dd.temperature_2m_max[0]), min: Math.round(dd.temperature_2m_min[0]),
+          rain: dd.precipitation_probability_max && dd.precipitation_probability_max[0] != null ? Math.round(dd.precipitation_probability_max[0]) : null };
+        if (dateKey(activeDate) === key) render();
+      })
+      .catch(() => { wxCache[key] = { status: 'err' }; setTimeout(() => { if (wxCache[key] && wxCache[key].status === 'err') delete wxCache[key]; }, 600000); });
+    return null;
+  }
+  const wxText = w => `${w.max}° / ${w.min}°` + (w.rain !== null ? ` · ${w.rain}% rain` : '');
+
+  // ---------------- Annual production target (shared with Weekly Ops, saved in this browser) ----------------
+  const DEFAULT_TARGET_L = 14000000;
+  const PROD_KEY = 'balter_prod_packaged_v1';
+  const TANK_TOP = 30, TANK_BOT = 290, TANK_H = TANK_BOT - TANK_TOP;
+  function readProd() {
+    try { const x = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); if (x && isFinite(x.litres)) return x; } catch (e) {}
+    return { litres: 0, updated: null };
+  }
+  let prod = readProd();
+  function refreshProd() { // the Weekly Ops page may have changed it since this page loaded
+    prod = readProd();
+    if (!prod.targetSet || !(prod.target > 0)) { prod.target = DEFAULT_TARGET_L; prod.targetSet = false; }
+  }
+  const fmtL = n => Math.round(n).toLocaleString('en-AU');
+  function wavePath(y, amp, period, width) {
+    let d = `M-${period} ${y}`;
+    for (let x = -period; x < width + period; x += period) d += ` q ${period / 4} -${amp} ${period / 2} 0 t ${period / 2} 0`;
+    return d + ` V ${TANK_BOT + 60} H -${period} Z`;
+  }
+  function fermenterSvg(staticPct) {
+    const isStatic = typeof staticPct === 'number';
+    const liquidOffset = isStatic ? (1 - Math.min(1, Math.max(0, staticPct))) * TANK_H : TANK_H;
+    const shape = 'M50,74 Q50,34 110,30 Q170,34 170,74 L170,222 L122,290 L98,290 L50,222 Z';
+    return `<svg viewBox="0 0 260 360"${isStatic ? ' width="520" height="720"' : ''} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fermenter showing progress to the annual production target">
+      <defs>
+        <clipPath id="tankClip"><path d="${shape}"/></clipPath>
+        <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5CE3BA"/><stop offset="1" stop-color="#36C49A"/></linearGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa1a8"/><stop offset=".35" stop-color="#e9ecee"/><stop offset=".7" stop-color="#c3c8cc"/><stop offset="1" stop-color="#8d949b"/></linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset=".25" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#000000" stop-opacity=".10"/></linearGradient>
+      </defs>
+      <rect x="62" y="236" width="9" height="104" rx="2" fill="#8d949b"/><rect x="149" y="236" width="9" height="104" rx="2" fill="#8d949b"/>
+      <rect x="54" y="336" width="25" height="7" rx="3" fill="#6f767d"/><rect x="141" y="336" width="25" height="7" rx="3" fill="#6f767d"/>
+      <rect x="64" y="286" width="92" height="6" rx="3" fill="#a9afb5"/>
+      <rect x="104" y="10" width="12" height="24" rx="3" fill="#a9afb5"/><rect x="98" y="6" width="24" height="8" rx="3" fill="#8d949b"/>
+      <path d="M72 40 h-34" stroke="#a9afb5" stroke-width="6" stroke-linecap="round"/><circle cx="30" cy="40" r="9" fill="#fff" stroke="#8d949b" stroke-width="3"/><path d="M30 40 L34 35" stroke="#14161a" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="${shape}" fill="url(#steel)"/>
+      <g clip-path="url(#tankClip)">
+        <rect x="40" y="${TANK_TOP}" width="140" height="${TANK_H + 10}" fill="#f4f6f7"/>
+        <g class="liquid" id="liquidGroup" ${isStatic ? `transform="translate(0 ${liquidOffset})"` : `style="transform: translateY(${TANK_H}px);"`}>
+          <g class="wave-b" opacity=".55"><path d="${wavePath(TANK_TOP - 1, 4, 60, 260)}" fill="#7CEBCB"/></g>
+          <g class="wave-a"><path d="${wavePath(TANK_TOP + 2, 4, 60, 260)}" fill="url(#liqGrad)"/></g>
+          <circle cx="82" cy="200" r="3" fill="#fff" opacity=".45"/><circle cx="130" cy="240" r="2.4" fill="#fff" opacity=".4"/><circle cx="104" cy="260" r="2" fill="#fff" opacity=".4"/><circle cx="148" cy="180" r="2.6" fill="#fff" opacity=".4"/>
+        </g>
+        <path d="${shape}" fill="url(#glass)"/>
+      </g>
+      <path d="M50 112 H170 M50 178 H170" stroke="#6f767d" stroke-width="3" opacity=".55"/>
+      <ellipse cx="148" cy="146" rx="13" ry="16" fill="none" stroke="#6f767d" stroke-width="3"/>
+      <path d="${shape}" fill="none" stroke="#6f767d" stroke-width="5" stroke-linejoin="round"/>
+      ${[25, 50, 75, 100].map(p => { const y = TANK_BOT - TANK_H * p / 100; return `<path d="M176 ${y} h12" stroke="#9a9da3" stroke-width="2"/><text x="194" y="${y + 4}" font-family="JetBrains Mono, monospace" font-size="12" fill="#6b6f76">${p}%</text>`; }).join('')}
+    </svg>`;
+  }
+  refreshProd();
+  // Gmail strips SVG, so the gauge is drawn to a PNG for the email.
+  function fermenterPng() {
+    return new Promise(resolve => {
+      try {
+        const svg = fermenterSvg(prod.litres / prod.target).replace('role="img"', 'role="img" style="background:#fff"');
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const c = document.createElement('canvas'); c.width = 520; c.height = 720;
+            const ctx = c.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0, 520, 720);
+            resolve(c.toDataURL('image/png'));
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      } catch (e) { resolve(null); }
+    });
+  }
+  let gaugePng = null;
   function buildEmailHtml() {
+    const wxNow = (wxCache[dateKey(activeDate)] || {}).status === 'ok' ? wxCache[dateKey(activeDate)] : null;
+    const emailWeather = wxNow ? `${wxNow.icon} ${escHtml(wxNow.desc)}<br><span style="font-size:11px;font-weight:600;color:#55585F;">${escHtml(wxText(wxNow))}</span>` : '';
     const ownerBlocks = OWNER_GROUPS.flatMap(g => g.sections).map(emailOwnerSection).join('');
     const kpiRows = emailRowOfTiles(KPI_SECTIONS.map(emailKpiTile), 3);
     const winsLeft = current.winsLeft.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
@@ -982,10 +1093,7 @@
         <span style="display:inline-block;background:#6C7A89;color:#ffffff;font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;margin-right:6px;">${escHtml(item.section)}</span>
         ${escHtml(item.value)}
       </td></tr>`).join('');
-    const emailCard = (title, icon, rowsHtml, accent, tint) => {accent = accent || '#6C7A89'; return `
-      <tr><td style="height:14px;"></td></tr>
-      <tr><td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid ${accent};border-radius:8px;">
+    const emailCardInner = (title, icon, rowsHtml, accent) => { accent = accent || '#6C7A89'; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid ${accent};border-radius:8px;">
           <tr><td style="padding:8px 9px 6px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
               <td style="width:22px;height:22px;background:${accent};border-radius:6px;text-align:center;font-size:11px;line-height:22px;">${icon}</td>
@@ -993,10 +1101,26 @@
             </tr></table>
           </td></tr>
           ${rowsHtml}
-        </table>
-      </td></tr>`; };
-    const execBlock = dSummary && dSummary.text ? emailCard('EXECUTIVE SUMMARY', '&#127919;',
+        </table>`; };
+    const emailCard = (title, icon, rowsHtml, accent) => `
+      <tr><td style="height:14px;"></td></tr>
+      <tr><td>${emailCardInner(title, icon, rowsHtml, accent)}</td></tr>`;
+    const execInner = dSummary && dSummary.text ? emailCardInner('EXECUTIVE SUMMARY', '&#127919;',
       `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#EDFAF6;border:1px solid #B5EBDC;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`, '#47D7AC') : '';
+    const gaugeInner = (prod.litres > 0) ? (() => {
+      const pct = prod.litres / prod.target * 100, pctText = pct >= 100 ? '100' : pct.toFixed(1);
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;">
+        <tr><td align="center" style="padding:8px 8px 2px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</td></tr>
+        <tr><td align="center" style="padding:2px 8px;">${gaugePng ? `<img src="${gaugePng}" width="92" height="127" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:92px;height:127px;margin:0 auto;border:0;">` : ''}</td></tr>
+        <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:26px;line-height:1.1;color:#14161a;padding-top:2px;">${pctText}<span style="font-size:13px;color:#0d6a4d;">%</span></td></tr>
+        <tr><td align="center" style="padding:2px 8px 9px;font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#55585F;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of ${fmtL(prod.target)} L</td></tr>
+      </table>`;
+    })() : '';
+    const execBlock = execInner && gaugeInner
+      ? `<tr><td style="height:14px;"></td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td valign="top" width="68%">${execInner}</td><td width="12" style="width:12px;font-size:0;">&nbsp;</td><td valign="top" width="32%">${gaugeInner}</td></tr></table></td></tr>`
+      : execInner ? `<tr><td style="height:14px;"></td></tr><tr><td>${execInner}</td></tr>`
+      : gaugeInner ? `<tr><td style="height:14px;"></td></tr><tr><td>${gaugeInner}</td></tr>` : '';
     const keyBlock = ntkItems ? emailCard('KEY POINTS', '&#128204;',
       `<tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>`) : '';
     const ntkBlock = execBlock + keyBlock;
@@ -1005,15 +1129,16 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td width="33%"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="25%" align="center"><table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>
                 <td style="width:30px;"><img src="data:image/png;base64,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" width="34" height="34" alt="Balter" style="display:inline-block;vertical-align:middle;" /></td>
                 <td style="padding-left:8px;">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:#14161a;line-height:1.15;">9AM What's Up Meeting</td></tr>
                   <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9da3;padding-top:1px;">Balter Brewing</td></tr></table>
                 </td>
               </tr></table></td>
-              <td width="34%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(current.tabName)}</td>
-              <td width="33%" align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#14161a;">&#127942; ${current.ltiDays !== null ? current.ltiDays : '—'} Days LTI Free</td>
+              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">${emailWeather}</td>
+              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(current.tabName)}</td>
+              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#14161a;">&#127942; ${current.ltiDays !== null ? current.ltiDays : '—'} Days LTI Free</td>
             </tr></table>
           </td></tr>
           ${ntkBlock}
@@ -1097,6 +1222,8 @@
 
   async function exportToGmail() {
     if (!current) { showToast('Nothing synced yet'); return false; }
+    refreshProd();
+    gaugePng = prod.litres > 0 ? await fermenterPng() : null;
     const html = buildEmailHtml();
     const text = buildEmailPlainText();
     try {
