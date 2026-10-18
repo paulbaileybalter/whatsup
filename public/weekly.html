@@ -717,7 +717,6 @@
             </tr></table>
           </td></tr>
           <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
-          ${emailGauge(gaugePng)}
           ${weekData.sections.filter(sc => visibleItems(sc).length).map(emailSection).join('')}
         </table>
       </td></tr>
@@ -760,8 +759,7 @@
   }
   async function exportEmail() {
     if (!weekData || !weekData.sections.some(sc => visibleItems(sc).length)) { showToast('Nothing to export yet'); return false; }
-    const png = prod.litres > 0 ? await fermenterPng() : null;
-    const html = buildEmailHtml(png), text = buildEmailPlainText();
+    const html = buildEmailHtml(null), text = buildEmailPlainText();
     try {
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
@@ -944,7 +942,6 @@
       strip.appendChild(chip);
     });
     frame.appendChild(strip);
-    frame.appendChild(buildProductionCard());
 
     // AI status line
     const status = el('div', 'ai-status');

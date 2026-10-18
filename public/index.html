@@ -97,6 +97,31 @@
   .bullet .bval.empty { color: var(--muted); font-style: italic; }
 
   .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .prod-card { display: flex; gap: 28px; align-items: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--mint); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 26px; margin-bottom: 14px; }
+  .prod-tank { flex: 0 0 auto; width: 190px; }
+  .prod-tank svg { width: 100%; height: auto; display: block; }
+  .prod-info { flex: 1; min-width: 0; }
+  .prod-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .prod-pct { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1.05; color: var(--ink); margin: 4px 0 2px; }
+  .prod-pct small { font-size: 22px; color: var(--mint-ink); margin-left: 2px; }
+  .prod-line { font-family: var(--font-data); font-size: 13px; color: var(--ink-soft); }
+  .prod-line b { color: var(--ink); }
+  .prod-msg { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--mint-ink); min-height: 18px; }
+  .prod-fields { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  .prod-fields .prod-field { margin-top: 0; flex: 1 1 200px; }
+  .prod-field { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
+  .prod-field label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .prod-input-wrap { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; padding: 0 12px; }
+  .prod-input-wrap:focus-within { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(71,215,172,.25); }
+  .prod-input-wrap input { border: none; outline: none; flex: 1; min-width: 0; padding: 10px 0; font-family: var(--font-data); font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
+  .prod-input-wrap span { font-family: var(--font-data); font-size: 13px; color: var(--muted); }
+  .prod-updated { font-size: 11.5px; color: var(--muted); }
+  .wave-a { animation: waveMove 5s linear infinite; }
+  .wave-b { animation: waveMove 8s linear infinite reverse; }
+  @keyframes waveMove { to { transform: translateX(-60px); } }
+  .liquid { transition: transform 1s cubic-bezier(.4,.1,.2,1); }
+  @media (prefers-reduced-motion: reduce) { .wave-a, .wave-b { animation: none; } .liquid { transition: none; } }
+  @media (max-width: 600px) { .prod-card { flex-direction: column; text-align: center; } .prod-field { margin-left: auto; margin-right: auto; } }
   .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card .card-head .tabicon { background: var(--slate); }
   .ntk-card.exec { border-left-color: var(--xpa); }
@@ -630,26 +655,6 @@
     rightGroup.appendChild(logoutBtn);
     frame.appendChild(topbar);
 
-    // KPI grid
-    frame.appendChild(el('div', 'section-label', 'KPI Snapshot'));
-    const kpiGrid = el('div', 'kpi-grid');
-    KPI_SECTIONS.forEach(sec => {
-      const card = el('div', 'card');
-      card.style.setProperty('--card-accent', sec.color);
-      const head = el('div', 'card-head', `<span class="tabicon">${sec.icon}</span><span>${sec.title}</span>`);
-      card.appendChild(head);
-      const rows = el('div', 'kpi-rows');
-      current.kpi[sec.key].forEach(m => {
-        const row = el('div', 'kpi-row');
-        row.appendChild(el('span', 'lbl', escapeHtml(m.label)));
-        row.appendChild(el('span', 'val', escapeHtml(m.value) || '–'));
-        rows.appendChild(row);
-      });
-      card.appendChild(rows);
-      kpiGrid.appendChild(card);
-    });
-    frame.appendChild(kpiGrid);
-
     // Executive Summary — AI-written from the Key Points and the Wins
     if (execInputs().length) {
       const ntkCard = el('div', 'ntk-card exec');
@@ -703,6 +708,9 @@
       ntkCard.appendChild(ntkBody);
       frame.appendChild(ntkCard);
     }
+
+    // Annual production target — updated daily here, shown in the email too
+    frame.appendChild(buildProductionCard());
 
     // Key Points — flagged rows from the sheet's "Need to Know" checkbox column
     if (current.needToKnow && current.needToKnow.length) {
@@ -763,6 +771,26 @@
       });
       frame.appendChild(grid);
     });
+
+    // KPI grid
+    frame.appendChild(el('div', 'section-label', 'KPI Snapshot'));
+    const kpiGrid = el('div', 'kpi-grid');
+    KPI_SECTIONS.forEach(sec => {
+      const card = el('div', 'card');
+      card.style.setProperty('--card-accent', sec.color);
+      const head = el('div', 'card-head', `<span class="tabicon">${sec.icon}</span><span>${sec.title}</span>`);
+      card.appendChild(head);
+      const rows = el('div', 'kpi-rows');
+      current.kpi[sec.key].forEach(m => {
+        const row = el('div', 'kpi-row');
+        row.appendChild(el('span', 'lbl', escapeHtml(m.label)));
+        row.appendChild(el('span', 'val', escapeHtml(m.value) || '–'));
+        rows.appendChild(row);
+      });
+      card.appendChild(rows);
+      kpiGrid.appendChild(card);
+    });
+    frame.appendChild(kpiGrid);
 
     appendToolbar(frame, false);
     frame.appendChild(el('div', 'synced-note', `Last synced ${fmtSyncTime(current.syncedAt)} from tab "${escapeHtml(current.tabName)}" — this page mirrors the Google Sheet and isn't editable here.<br><span style="opacity:.6;">Build: label-search-v1 (2026-07-22)</span>`));
@@ -1009,6 +1037,11 @@
     return { litres: 0, updated: null };
   }
   let prod = readProd();
+  const saveProd = () => { try { localStorage.setItem(PROD_KEY, JSON.stringify(prod)); } catch (e) {} };
+  function parseLitres(str) {
+    const n = parseFloat(String(str || '').replace(/[^0-9.]/g, ''));
+    return isFinite(n) ? Math.round(n) : 0;
+  }
   function refreshProd() { // the Weekly Ops page may have changed it since this page loaded
     prod = readProd();
     if (!prod.targetSet || !(prod.target > 0)) { prod.target = DEFAULT_TARGET_L; prod.targetSet = false; }
@@ -1072,6 +1105,67 @@
     });
   }
   let gaugePng = null;
+  function buildProductionCard() {
+    const card = el('div', 'prod-card');
+    card.innerHTML = `
+      <div class="prod-tank">${fermenterSvg()}</div>
+      <div class="prod-info">
+        <div class="prod-kicker">Annual production target</div>
+        <div class="prod-pct"><span id="prodPct">0</span><small>%</small></div>
+        <div class="prod-line"><b id="prodDone">0</b> of <b id="prodTarget"></b> litres packaged</div>
+        <div class="prod-line">Remaining: <b id="prodLeft"></b> L</div>
+        <div class="prod-msg" id="prodMsg"></div>
+        <div class="prod-fields">
+        <div class="prod-field">
+          <label for="prodTargetInput">Annual target (litres)</label>
+          <div class="prod-input-wrap"><input id="prodTargetInput" type="text" inputmode="numeric" autocomplete="off"><span>L</span></div>
+        </div>
+        <div class="prod-field">
+          <label for="prodInput">Packaged total so far (litres)</label>
+          <div class="prod-input-wrap"><input id="prodInput" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 6,500,000"><span>L</span></div>
+        </div>
+        </div>
+        <div class="prod-updated" id="prodUpdated" style="margin-top:8px;"></div>
+      </div>`;
+    const input = card.querySelector('#prodInput');
+    const g = card.querySelector('#liquidGroup');
+    const upd = () => {
+      const pct = Math.min(1, Math.max(0, prod.litres / prod.target));
+      g.style.transform = `translateY(${(1 - pct) * TANK_H}px)`;
+      const shown = prod.litres / prod.target * 100;
+      card.querySelector('#prodPct').textContent = shown >= 100 ? '100' : shown.toFixed(1);
+      card.querySelector('#prodDone').textContent = fmtL(prod.litres);
+      card.querySelector('#prodTarget').textContent = fmtL(prod.target);
+      card.querySelector('#prodLeft').textContent = fmtL(Math.max(0, prod.target - prod.litres));
+      card.querySelector('#prodMsg').textContent = prod.litres >= prod.target ? '🎉 Target reached' + (prod.litres > prod.target ? ` — ${fmtL(prod.litres - prod.target)} L over` : '') : '';
+      card.querySelector('#prodUpdated').textContent = prod.updated ? 'Last updated ' + new Date(prod.updated).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Saved in this browser when you leave the field.';
+    };
+    const tInput = card.querySelector('#prodTargetInput');
+    tInput.value = fmtL(prod.target);
+    tInput.addEventListener('input', () => { const n = parseLitres(tInput.value); if (n > 0) { prod.target = n; prod.targetSet = true; upd(); } });
+    tInput.addEventListener('change', () => {
+      const n = parseLitres(tInput.value);
+      if (n > 0) { prod.target = n; prod.targetSet = true; }
+      prod.updated = new Date().toISOString(); saveProd();
+      tInput.value = fmtL(prod.target); upd();
+    });
+    tInput.addEventListener('keydown', e => { if (e.key === 'Enter') tInput.blur(); });
+    input.value = prod.litres ? fmtL(prod.litres) : '';
+    input.addEventListener('input', () => { prod.litres = parseLitres(input.value); upd(); });
+    input.addEventListener('change', () => {
+      prod.litres = parseLitres(input.value); prod.updated = new Date().toISOString();
+      saveProd();
+      input.value = prod.litres ? fmtL(prod.litres) : ''; upd();
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+    upd();
+    // start empty, then fill up to the current level
+    const level = g.style.transform;
+    g.style.transform = `translateY(${TANK_H}px)`;
+    requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transform = level; }));
+    return card;
+  }
+
   function buildEmailHtml() {
     const wxNow = (wxCache[dateKey(activeDate)] || {}).status === 'ok' ? wxCache[dateKey(activeDate)] : null;
     const ownerBlocks = OWNER_GROUPS.flatMap(g => g.sections).map(emailOwnerSection).join('');
@@ -1106,7 +1200,7 @@
           <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of ${fmtL(prod.target)} L</div>
           <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</div>
         </td></tr></table>` : '';
-    const wxInner = wxNow ? `<table role="presentation" width="100%" height="140" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;"><tr>
+    const wxInner = wxNow ? `<table role="presentation" width="100%" height="140" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #FDAA63;border-radius:8px;background:#FFF5EA;"><tr>
         <td valign="middle" align="center" style="padding:10px 14px;">
           <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Gold Coast weather</div>
           <div style="font-size:40px;line-height:1.2;">${wxNow.icon}</div>
