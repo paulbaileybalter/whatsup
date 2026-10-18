@@ -55,9 +55,6 @@
   .brand__text { display: flex; flex-direction: column; line-height: 1.15; }
   .brand__title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); white-space: nowrap; }
   .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
-  .wx-pill { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 11px; background: var(--paper); white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--ink); }
-  .wx-pill .wx-ico { font-size: 18px; line-height: 1; }
-  .wx-pill .wx-sub { font-size: 10.5px; font-weight: 600; color: var(--ink-soft); display: block; line-height: 1.2; }
   .lti-pill { justify-self: end; display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; background: var(--paper); }
   .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 13px; font-size: 12.5px; }
   .topbar-nav { flex: 1; display: flex; align-items: center; justify-content: space-evenly; gap: 6px; flex-wrap: wrap; }
@@ -586,13 +583,7 @@
     newsletterBtn.textContent = 'Newsletter';
     nav.appendChild(newsletterBtn);
 
-    // weather for the day shown (Gold Coast), fills in by itself
-    const wx = weatherFor(activeDate);
-    const wxPill = el('div', 'wx-pill', wx
-      ? `<span class="wx-ico">${wx.icon}</span><span>${escapeHtml(wx.desc)}<span class="wx-sub">${escapeHtml(wxText(wx))}</span></span>`
-      : `<span class="wx-ico">🌡️</span><span>Weather<span class="wx-sub">Gold Coast</span></span>`);
-    wxPill.title = 'Gold Coast forecast (Open-Meteo)';
-    nav.appendChild(wxPill);
+    weatherFor(activeDate); // start fetching the day's weather so it is ready for the email
 
     // calendar picker + date
     const datePill = el('div', 'date-pill');
@@ -1083,7 +1074,6 @@
   let gaugePng = null;
   function buildEmailHtml() {
     const wxNow = (wxCache[dateKey(activeDate)] || {}).status === 'ok' ? wxCache[dateKey(activeDate)] : null;
-    const emailWeather = wxNow ? `${wxNow.icon} ${escHtml(wxNow.desc)}<br><span style="font-size:11px;font-weight:600;color:#55585F;">${escHtml(wxText(wxNow))}</span>` : '';
     const ownerBlocks = OWNER_GROUPS.flatMap(g => g.sections).map(emailOwnerSection).join('');
     const kpiRows = emailRowOfTiles(KPI_SECTIONS.map(emailKpiTile), 3);
     const winsLeft = current.winsLeft.filter(Boolean).map(w => `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;padding:3px 0;color:#14161a;">&#9733; ${escHtml(w)}</div>`).join('');
@@ -1107,20 +1097,28 @@
       <tr><td>${emailCardInner(title, icon, rowsHtml, accent)}</td></tr>`;
     const execInner = dSummary && dSummary.text ? emailCardInner('EXECUTIVE SUMMARY', '&#127919;',
       `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#EDFAF6;border:1px solid #B5EBDC;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`, '#47D7AC') : '';
-    const gaugeInner = (prod.litres > 0) ? (() => {
-      const pct = prod.litres / prod.target * 100, pctText = pct >= 100 ? '100' : pct.toFixed(1);
-      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;">
-        <tr><td align="center" style="padding:8px 8px 2px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</td></tr>
-        <tr><td align="center" style="padding:2px 8px;">${gaugePng ? `<img src="${gaugePng}" width="92" height="127" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:92px;height:127px;margin:0 auto;border:0;">` : ''}</td></tr>
-        <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:26px;line-height:1.1;color:#14161a;padding-top:2px;">${pctText}<span style="font-size:13px;color:#0d6a4d;">%</span></td></tr>
-        <tr><td align="center" style="padding:2px 8px 9px;font-family:'Courier New',Courier,monospace;font-size:10.5px;color:#55585F;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of ${fmtL(prod.target)} L</td></tr>
-      </table>`;
-    })() : '';
-    const execBlock = execInner && gaugeInner
-      ? `<tr><td style="height:14px;"></td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td valign="top" width="68%">${execInner}</td><td width="12" style="width:12px;font-size:0;">&nbsp;</td><td valign="top" width="32%">${gaugeInner}</td></tr></table></td></tr>`
-      : execInner ? `<tr><td style="height:14px;"></td></tr><tr><td>${execInner}</td></tr>`
-      : gaugeInner ? `<tr><td style="height:14px;"></td></tr><tr><td>${gaugeInner}</td></tr>` : '';
+    const pctNow = prod.litres / prod.target * 100, pctText = pctNow >= 100 ? '100' : pctNow.toFixed(1);
+    const gaugeInner = (prod.litres > 0) ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;"><tr>
+        ${gaugePng ? `<td width="110" align="center" valign="middle" style="padding:8px 4px 8px 12px;"><img src="${gaugePng}" width="90" height="124" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:90px;height:124px;border:0;"></td>` : ''}
+        <td valign="middle" style="padding:8px 14px;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</div>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:34px;line-height:1.15;color:#14161a;">${pctText}<span style="font-size:16px;color:#0d6a4d;">%</span></div>
+          <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of ${fmtL(prod.target)} L</div>
+          <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</div>
+        </td></tr></table>` : '';
+    const wxInner = wxNow ? `<table role="presentation" width="100%" height="140" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;"><tr>
+        <td valign="middle" align="center" style="padding:10px 14px;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Gold Coast weather</div>
+          <div style="font-size:40px;line-height:1.2;">${wxNow.icon}</div>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15px;color:#14161a;">${escHtml(wxNow.desc)}</div>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#55585F;padding-top:2px;">${wxNow.max}&deg; / ${wxNow.min}&deg;${wxNow.rain !== null ? ' &middot; ' + wxNow.rain + '% rain' : ''}</div>
+        </td></tr></table>` : '';
+    const execBlock = (execInner ? `<tr><td style="height:14px;"></td></tr><tr><td>${execInner}</td></tr>` : '') +
+      (gaugeInner || wxInner ? `<tr><td style="height:14px;"></td></tr><tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          ${gaugeInner ? `<td valign="top" width="${wxInner ? '60%' : '100%'}">${gaugeInner}</td>` : ''}
+          ${gaugeInner && wxInner ? '<td width="12" style="width:12px;font-size:0;">&nbsp;</td>' : ''}
+          ${wxInner ? `<td valign="top" width="${gaugeInner ? '37%' : '100%'}">${wxInner}</td>` : ''}
+          </tr></table></td></tr>` : '');
     const keyBlock = ntkItems ? emailCard('KEY POINTS', '&#128204;',
       `<tr><td style="padding:2px 14px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${ntkItems}</table></td></tr>`) : '';
     const ntkBlock = execBlock + keyBlock;
@@ -1129,16 +1127,15 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td width="25%" align="center"><table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>
+              <td width="33%"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
                 <td style="width:30px;"><img src="data:image/png;base64,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" width="34" height="34" alt="Balter" style="display:inline-block;vertical-align:middle;" /></td>
                 <td style="padding-left:8px;">
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:#14161a;line-height:1.15;">9AM What's Up Meeting</td></tr>
                   <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9da3;padding-top:1px;">Balter Brewing</td></tr></table>
                 </td>
               </tr></table></td>
-              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">${emailWeather}</td>
-              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(current.tabName)}</td>
-              <td width="25%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#14161a;">&#127942; ${current.ltiDays !== null ? current.ltiDays : '—'} Days LTI Free</td>
+              <td width="34%" align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(current.tabName)}</td>
+              <td width="33%" align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;color:#14161a;">&#127942; ${current.ltiDays !== null ? current.ltiDays : '—'} Days LTI Free</td>
             </tr></table>
           </td></tr>
           ${ntkBlock}
@@ -1222,6 +1219,7 @@
 
   async function exportToGmail() {
     if (!current) { showToast('Nothing synced yet'); return false; }
+    for (let i = 0; i < 20 && (wxCache[dateKey(activeDate)] || {}).status === 'loading'; i++) await new Promise(r => setTimeout(r, 150));
     refreshProd();
     gaugePng = prod.litres > 0 ? await fermenterPng() : null;
     const html = buildEmailHtml();
