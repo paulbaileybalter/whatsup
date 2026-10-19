@@ -122,6 +122,16 @@
   .liquid { transition: transform 1s cubic-bezier(.4,.1,.2,1); }
   @media (prefers-reduced-motion: reduce) { .wave-a, .wave-b { animation: none; } .liquid { transition: none; } }
   @media (max-width: 600px) { .prod-card { flex-direction: column; text-align: center; } .prod-field { margin-left: auto; margin-right: auto; } }
+  .prod-row { display: flex; gap: 14px; align-items: stretch; margin-top: 4px; }
+  .prod-row .prod-card { flex: 1; min-width: 0; margin: 0; }
+  .wx-card { flex: 0 0 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--apricot); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 20px; }
+  .wx-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .wx-icon { font-size: 64px; line-height: 1.15; margin-top: 6px; }
+  .wx-desc { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ink); }
+  .wx-temps { font-family: var(--font-data); font-size: 14px; color: var(--ink-soft); margin-top: 4px; }
+  .wx-temps b { color: var(--ink); }
+  .wx-note { font-size: 12px; color: var(--muted); }
+  @media (max-width: 900px) { .prod-row { flex-direction: column; } .wx-card { flex: 0 0 auto; } }
   .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
   .ntk-card .card-head .tabicon { background: var(--slate); }
   .ntk-card.exec { border-left-color: var(--xpa); }
@@ -710,7 +720,10 @@
     }
 
     // Annual production target — updated daily here, shown in the email too
-    frame.appendChild(buildProductionCard());
+    const prodRow = el('div', 'prod-row');
+    prodRow.appendChild(buildProductionCard());
+    prodRow.appendChild(buildWeatherCard());
+    frame.appendChild(prodRow);
 
     // Key Points — flagged rows from the sheet's "Need to Know" checkbox column
     if (current.needToKnow && current.needToKnow.length) {
@@ -1163,6 +1176,16 @@
     const level = g.style.transform;
     g.style.transform = `translateY(${TANK_H}px)`;
     requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transform = level; }));
+    return card;
+  }
+
+  function buildWeatherCard() {
+    const wx = weatherFor(activeDate);
+    const card = el('div', 'wx-card');
+    card.title = 'Gold Coast forecast (Open-Meteo)';
+    card.innerHTML = wx
+      ? `<div class="wx-kicker">Gold Coast weather</div><div class="wx-icon">${wx.icon}</div><div class="wx-desc">${escapeHtml(wx.desc)}</div><div class="wx-temps"><b>${wx.max}°</b> / ${wx.min}°${wx.rain !== null ? ' · ' + wx.rain + '% rain' : ''}</div>`
+      : `<div class="wx-kicker">Gold Coast weather</div><div class="wx-icon">🌡️</div><div class="wx-note">${(wxCache[dateKey(activeDate)] || {}).status === 'err' ? 'Weather unavailable right now' : 'Loading…'}</div>`;
     return card;
   }
 
