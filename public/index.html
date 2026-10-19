@@ -97,7 +97,7 @@
   .bullet .bval.empty { color: var(--muted); font-style: italic; }
 
   .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
-  .prod-card { display: flex; gap: 28px; align-items: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--mint); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 26px; margin-bottom: 14px; }
+  .prod-card { display: flex; gap: 28px; align-items: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--sky); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 26px; margin-bottom: 14px; }
   .prod-tank { flex: 0 0 auto; width: 190px; }
   .prod-tank svg { width: 100%; height: auto; display: block; }
   .prod-info { flex: 1; min-width: 0; }
@@ -112,7 +112,7 @@
   .prod-field { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
   .prod-field label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
   .prod-input-wrap { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; padding: 0 12px; }
-  .prod-input-wrap:focus-within { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(71,215,172,.25); }
+  .prod-input-wrap:focus-within { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(153,214,234,.4); }
   .prod-input-wrap input { border: none; outline: none; flex: 1; min-width: 0; padding: 10px 0; font-family: var(--font-data); font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
   .prod-input-wrap span { font-family: var(--font-data); font-size: 13px; color: var(--muted); }
   .prod-updated { font-size: 11.5px; color: var(--muted); }
@@ -1192,7 +1192,7 @@
     const execInner = dSummary && dSummary.text ? emailCardInner('EXECUTIVE SUMMARY', '&#127919;',
       `<tr><td style="padding:2px 14px 10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#EDFAF6;border:1px solid #B5EBDC;border-radius:8px;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#14161a;">${escHtml(dSummary.text)}</td></tr></table></td></tr>`, '#47D7AC') : '';
     const pctNow = prod.litres / prod.target * 100, pctText = pctNow >= 100 ? '100' : pctNow.toFixed(1);
-    const gaugeInner = (prod.litres > 0) ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;"><tr>
+    const gaugeInner = (prod.litres > 0) ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;"><tr>
         ${gaugePng ? `<td width="110" align="center" valign="middle" style="padding:8px 4px 8px 12px;"><img src="${gaugePng}" width="90" height="124" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:90px;height:124px;border:0;"></td>` : ''}
         <td valign="middle" style="padding:8px 14px;">
           <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</div>
@@ -1200,7 +1200,7 @@
           <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of ${fmtL(prod.target)} L</div>
           <div style="font-family:'Courier New',Courier,monospace;font-size:11px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</div>
         </td></tr></table>` : '';
-    const wxInner = wxNow ? `<table role="presentation" width="100%" height="140" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #FDAA63;border-radius:8px;background:#FFF5EA;"><tr>
+    const wxInner = wxNow ? `<table role="presentation" width="100%" height="140" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #FDAA63;border-radius:8px;"><tr>
         <td valign="middle" align="center" style="padding:10px 14px;">
           <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Gold Coast weather</div>
           <div style="font-size:40px;line-height:1.2;">${wxNow.icon}</div>
