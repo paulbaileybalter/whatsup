@@ -117,13 +117,29 @@ function loginPageHtml(showError) {
 // Uses Anthropic if the ANTHROPIC_API_KEY Secret is set, otherwise Workers AI (the `AI` binding).
 // No key is ever sent to the browser.
 
+const AREA_NAMES = [
+  [/^qc\b/i, 'QC'],
+  [/^brew/i, 'the Brew Team'],
+  [/^packaging/i, 'the Pack Team'],
+  [/^engineering/i, 'Engineering'],
+  [/^maintenance/i, 'Maintenance'],
+  [/^planning/i, 'Planning'],
+  [/^people/i, 'HR'],
+];
+function areaName(title) {
+  const t = String(title || '').trim();
+  for (const [re, name] of AREA_NAMES) if (re.test(t)) return name;
+  return 'the ' + t.replace(/\s+Updates$/i, '') + ' Team'; // e.g. the Safety Team, the Logistics Team
+}
+const AREA_NAMING = 'Refer to each area by exactly these names: "QC", "the Brew Team" (never Brew & Cellar), "the Pack Team" (never Packaging), "Engineering", "Maintenance", "Planning", "HR" (never People). Any other area is "the <name> Team", e.g. "the Safety Team", "the Logistics Team", "the Customer Service Team". Never call any of them a section, tile, field or area.';
+
 const SUMMARY_SYSTEM = [
   "You summarise the Executive Summary points from a brewery's daily 9AM operations meeting for a weekly operations review.",
   "You get one section (e.g. QC, Packaging) with dated points. Write a plain, factual summary of the week for that section: two to three sentences, roughly 50 to 70 words, Australian English. Include the specific details that matter (products, quantities, tanks, lines, days, outcomes) rather than generalities. Use a neutral, professional tone: plain words, no dramatic, colourful or promotional language, and no filler such as \"this week\" or \"it was noted that\".",
   "Mention days where timing matters. Group repeated items. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
-  "Refer to each area as a team, e.g. \"the Safety Team\", \"the QC Team\", \"the Brew & Cellar Team\". Never call it a section, tile, field or area.",
+  AREA_NAMING,
 ].join(' ');
 
 const SUMMARY_SYSTEM_DAILY = [
@@ -132,16 +148,15 @@ const SUMMARY_SYSTEM_DAILY = [
   "Lead with what matters most; mention wins briefly if there are any. Only use facts in the points; never invent numbers, causes or actions.",
   "The points are free text typed by the team. Base the summary only on what the text itself says; the sheet field each point was typed into is not given and must not be guessed or assumed.",
   "No headings, bullets, markdown or preamble - just the summary text.",
-  "Refer to each area as a team, e.g. \"the Safety Team\", \"the QC Team\", \"the Brew & Cellar Team\". Never call it a section, tile, field or area.",
+  AREA_NAMING,
 ].join(' ');
 
 function sectionPrompt(sec, mode) {
   if (mode === 'daily') {
-    return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel}] ${i.value}`).join('\n');
+    return `Today's points (Key Points and Wins):\n` + sec.items.map(i => `- [${i.dayLabel === 'Win' ? 'Win' : areaName(i.dayLabel)}] ${i.value}`).join('\n');
   }
   const lines = sec.items.map(i => `- ${i.dayLabel}: ${i.value}`); // field names are deliberately left out
-  const team = sec.title.replace(/\s+Updates$/i, '');
-  return `Team: the ${team} Team\nPoints:\n${lines.join('\n')}`;
+  return `Area: ${areaName(sec.title)}\nPoints:\n${lines.join('\n')}`;
 }
 
 async function callLLM(env, system, prompt, maxTokens) {
