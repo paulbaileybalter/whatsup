@@ -683,7 +683,7 @@
     return `
       <tr><td style="height:16px;"></td></tr>
       <tr><td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #47D7AC;border-radius:8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;">
           <tr>
             ${png ? `<td width="150" valign="middle" align="center" style="padding:10px 6px 10px 14px;vertical-align:middle;"><img src="${png}" width="130" height="180" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:130px;height:180px;"></td>` : ''}
             <td valign="middle" style="padding:10px 16px;vertical-align:middle;">
@@ -717,6 +717,7 @@
             </tr></table>
           </td></tr>
           <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
+          ${emailGauge(gaugePng)}
           ${weekData.sections.filter(sc => visibleItems(sc).length).map(emailSection).join('')}
         </table>
       </td></tr>
@@ -759,7 +760,9 @@
   }
   async function exportEmail() {
     if (!weekData || !weekData.sections.some(sc => visibleItems(sc).length)) { showToast('Nothing to export yet'); return false; }
-    const html = buildEmailHtml(null), text = buildEmailPlainText();
+    refreshProd(); // the total is updated on the Daily 9AM page, so re-read it
+    const png = prod.litres > 0 ? await fermenterPng() : null;
+    const html = buildEmailHtml(png), text = buildEmailPlainText();
     try {
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
@@ -781,6 +784,10 @@
   })();
   // the target only sticks if you changed it yourself; otherwise it follows the default
   if (!prod.targetSet || !(prod.target > 0)) { prod.target = DEFAULT_TARGET_L; prod.targetSet = false; }
+  function refreshProd() {
+    try { const x = JSON.parse(localStorage.getItem(PROD_KEY) || 'null'); if (x && isFinite(x.litres)) prod = x; } catch (e) {}
+    if (!prod.targetSet || !(prod.target > 0)) { prod.target = DEFAULT_TARGET_L; prod.targetSet = false; }
+  }
   const saveProd = () => { try { localStorage.setItem(PROD_KEY, JSON.stringify(prod)); } catch (e) {} };
   const fmtL = n => Math.round(n).toLocaleString('en-AU');
   function parseLitres(str) {
