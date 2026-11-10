@@ -50,3 +50,10 @@ Weekly Ops also has an annual production gauge (fermenter graphic, default targe
 Linked from the "Newsletter" button on the 9AM page. It reads every day's tab for a calendar month (default: the previous month), combines the Key Points and Wins (repeats merged), and uses the AI route `POST /api/newsletter` for: Balter Legend of the Month shortlist, a summary for the chosen person, a month-in-review summary, topic ideas for "Around the Brewery", and an item per chosen topic. All AI output can be redone or edited, and is saved per month in the browser.
 
 "Export to Slides" builds a `.pptx` in the browser (self-hosted `public/vendor/pptxgen.bundle.js`, Lexend font, assets in `public/assets/`) laid out like the "Around the brewery" slides in the September deck: black slide, three coloured cards per slide, photo placeholder, label, headline, ~70 words. Upload it to Google Drive and open it with Google Slides.
+
+## Weekly Ops: annual target and end-of-year projections
+
+- The Weekly Ops page shows the annual production target (read-only; the packaged total is entered on the Daily 9AM page).
+- Drop the Live Brewery Board `.xlsx` onto the box on that page. It is read in the browser (nothing is uploaded) using the vendored SheetJS reader in `public/vendor/xlsx.mini.min.js`. Per day it sums the Cartons (rows 36-39) and Kegs (rows 40-43) quantities, and keeps only the board's latest year in this browser's localStorage (`balter_lbb_v1`).
+- Two projections: packaged total + the board's plan to its last day (+ remaining days at the year's average), and packaged total + the year's average weekly volume x weeks left. Litres per carton (6 = 16 x 375 mL) and per keg (49.5) are editable under "Conversion assumptions".
+- Both projections are included in the weekly email once a board has been loaded.
