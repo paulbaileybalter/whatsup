@@ -449,7 +449,8 @@
       }
       return parts.join(' ');
     };
-    const isChecked = raw => /^(true|1|yes|✓|checked)$/i.test((raw || '').trim());
+    const isChecked = raw => /^(true|1|yes|y|x|✓|✔|☑|checked|ticked)$/i.test((raw || '').trim());
+    const ntkDebug = [];
     const owner = {};
     const needToKnow = [];
     let cursor = 6; // KPI grid ends around here; first owner header should appear shortly after
@@ -461,12 +462,17 @@
       }
       // Need to Know is a checkbox column added after Comments — locate it from this section's own
       // header row so it's found regardless of exactly which column it landed in.
-      let ntkCol = 12;
+      let ntkCol = 12, ntkFound = false;
       if (headerRow) {
-        for (let c = LAST_COL + 1; c <= LAST_COL + 6; c++) {
-          if (normLabel(cell(headerRow, c)).includes('need to know')) { ntkCol = c; break; }
+        for (let c = LAST_COL + 1; c <= LAST_COL + 8 && !ntkFound; c++) {
+          for (const hr of [headerRow, headerRow - 1]) {
+            if (/need to know|key point|exec|ntk/.test(normLabel(cell(hr, c)))) { ntkCol = c; ntkFound = true; break; }
+          }
         }
       }
+      // If the column can't be found by its heading (renamed or moved), accept a tick in any column to the
+      // right of the comments instead of silently showing nothing.
+      const tickedAnywhere = row => { for (let c = LAST_COL + 1; c <= LAST_COL + 8; c++) if (isChecked(cell(row, c))) return true; return false; };
       let rowCursor = (headerRow || cursor) + 1;
       const ownerName = cell(rowCursor, OWNER_COL) || sec.defaultOwner;
       const bullets = sec.bullets.map(label => {
@@ -476,9 +482,10 @@
         rowCursor = row + 1;
         const value = readComment(row);
         if (sec.key === 'safety_o' && /lti/i.test(label)) safetyLtiValue = value;
-        if (value && isChecked(cell(row, ntkCol))) {
+        if (value && (isChecked(cell(row, ntkCol)) || (!ntkFound && tickedAnywhere(row)))) {
           needToKnow.push({ section: sec.title, label: label || sec.title, value });
         }
+        if (value || isChecked(cell(row, ntkCol))) ntkDebug.push(`${sec.title} r${row}: col${ntkCol}${ntkFound ? '' : '(guessed)'}=[${cell(row, ntkCol)}] cols12-19=[${[12,13,14,15,16,17,18,19].map(c => cell(row, c)).join('|')}] text=${value ? 'yes' : 'no'}`);
         return { label, value, rag: ragClass(cell(row, RAG_COL)) };
       });
       owner[sec.key] = { ownerName, bullets };
@@ -500,7 +507,7 @@
     for (let i = 0; i < WINS_COUNT / 2; i++) winsLeft.push(winCell(winsStart + i));
     for (let i = 0; i < WINS_COUNT / 2; i++) winsRight.push(winCell(winsStart + WINS_COUNT / 2 + i));
 
-    return { tabName, kpi, owner, ltiDays, winsLeft, winsRight, needToKnow, syncedAt: new Date().toISOString() };
+    return { tabName, kpi, owner, ltiDays, winsLeft, winsRight, needToKnow, ntkDebug, syncedAt: new Date().toISOString() };
   }
 
   // ---------------- App state & rendering ----------------
@@ -725,6 +732,13 @@
     prodRow.appendChild(buildWeatherCard());
     frame.appendChild(prodRow);
 
+    if (/[?&]debug=1/.test(location.search)) {
+      const dbg = el('div', 'ntk-card');
+      dbg.appendChild(el('div', 'card-head', `<span class="tabicon">🛠</span><span>DEBUG — Need to Know columns (${escapeHtml(current.tabName)})</span>`));
+      const pre = el('pre'); pre.style.cssText = 'margin:0;padding:12px 18px;font-size:11px;white-space:pre-wrap;word-break:break-word;';
+      pre.textContent = (current.ntkDebug || []).join('\n') || '(no rows read)';
+      dbg.appendChild(pre); frame.appendChild(dbg);
+    }
     // Key Points — flagged rows from the sheet's "Need to Know" checkbox column
     if (current.needToKnow && current.needToKnow.length) {
       const kpCard = el('div', 'ntk-card');
