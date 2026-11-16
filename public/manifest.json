@@ -1,0 +1,12 @@
+{
+  "name": "Balter Brewing — 9AM What's Up Meeting",
+  "short_name": "9AM Meeting",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#47D7AC",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "."
+}

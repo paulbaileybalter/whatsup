@@ -4,13 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Balter Brewing — Weekly Ops</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAxNjEgMTYxIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMzAuMi4xLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjEgQnVpbGQgMSkgIC0tPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuc3QwIHsKICAgICAgICBmaWxsOiAjNmNjNWE1OwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMTM2LjMsNzAuNGwtOS40LTkuNGMtMS42LTEuNi00LjMtMS42LTYsMC0xLjYsMS42LTEuNiw0LjMsMCw2bDIuMywyLjNjLTkuNiwxMy4yLTI1LjIsMjEuNy00Mi43LDIxLjdzLTMzLjEtOC42LTQyLjctMjEuOGwyLjMtMi4zYzEuNi0xLjYsMS42LTQuMywwLTYtMS42LTEuNi00LjMtMS42LTYsMGwtOS40LDkuNGMtMS42LDEuNi0xLjYsNC4zLDAsNiwuOC44LDEuOSwxLjIsMywxLjJzMi4yLS40LDMtMS4ybDEuMS0xLjFjMTEuMiwxNC43LDI4LjksMjQuMiw0OC43LDI0LjJzMzcuNS05LjUsNDguNy0yNC4ybDEuMSwxLjFjLjguOCwxLjksMS4yLDMsMS4yczIuMi0uNCwzLTEuMmMxLjYtMS42LDEuNi00LjMsMC02Ii8+CiAgPHBhdGggY2xhc3M9InN0MCIgZD0iTTE1Mi41LDguNXYxNDRIOC41VjguNWgxNDRNMTYxLDBIMHYxNjFoMTYxVjBoMFoiLz4KPC9zdmc+">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="shortcut icon" href="/assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#47D7AC">
+<link rel="preload" href="/fonts/lexend-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
+<div class="bubbles" id="bubbles" aria-hidden="true"></div>
 <div id="app"></div>
+<script src="/bubbles.js?v=20261116a"></script>
 <style>
   #app, #app * { box-sizing: border-box; }
   #app {
@@ -269,6 +275,7 @@
   @media (prefers-reduced-motion: reduce) { .wave-a, .wave-b { animation: none; } .liquid { transition: none; } }
   @media (max-width: 600px) { .prod-card { flex-direction: column; text-align: center; } .prod-field { margin-left: auto; margin-right: auto; } }
 </style>
+<link rel="stylesheet" href="/theme.css?v=20261116a">
 <script>
 (function () {
   const KPI_SECTIONS = [
@@ -662,26 +669,26 @@
   }
 
   // ---------------- Email ----------------
-  const LOGO_PNG = 'data:image/png;base64,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';
+  const LOGO_PNG = 'data:image/png;base64,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';
   const rangeText = () => `${dayLabel(weekData.days[0].date)} – ${dayLabel(weekData.days[weekData.days.length - 1].date)} ${endDate.getFullYear()}`;
   function emailSection(sec) {
     const hex = COLOR_HEX[sec.color] || '#14161a';
     const sum = summaryText(sec.title);
-    const th = 'padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;';
+    const th = 'padding:8px 12px;font-family:Lexend,Segoe UI,Arial,sans-serif;font-weight:700;font-size:10px;color:#8A8D93;text-transform:uppercase;letter-spacing:.03em;background:#F7F7F5;border-bottom:1px solid #E5E5E5;';
     const rows = [];
     if (sum) rows.push({ f: 'Week summary', v: sum, bold: true });
     visibleItems(sec).forEach(it => rows.push({ f: it.dayLabel, v: it.value }));
     const dataRows = rows.map((r, i) => `
       <tr>
-        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.f)}</td>
-        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.v)}</td>
+        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:700;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};width:38%;${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.f)}</td>
+        <td valign="top" style="vertical-align:top;padding:9px 12px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;color:#14161a;border-bottom:${i === rows.length - 1 ? 'none' : '1px solid #EDEDED'};${r.bold ? 'background:#F7FBF9;' : ''}">${escHtml(r.v)}</td>
       </tr>`).join('');
     return `
       <tr><td style="height:20px;"></td></tr>
       <tr><td>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td width="6" style="background:${hex};border-radius:2px;line-height:1px;font-size:1px;">&nbsp;</td>
-          <td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:13.5px;color:#14161a;text-transform:uppercase;letter-spacing:.03em;">${escHtml(sec.title)}</td>
+          <td style="padding-left:10px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:800;font-size:13.5px;color:#14161a;text-transform:uppercase;letter-spacing:.03em;">${escHtml(sec.title)}</td>
         </tr></table>
       </td></tr>
       <tr><td style="height:8px;"></td></tr>
@@ -715,19 +722,19 @@
     if (!(prod.litres > 0)) return '';
     const pct = prod.litres / prod.target * 100;
     const pctText = pct >= 100 ? '100' : pct.toFixed(1);
-    const over = prod.litres >= prod.target ? `<tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0d6a4d;">&#127881; Target reached${prod.litres > prod.target ? ' &mdash; ' + fmtL(prod.litres - prod.target) + ' L over' : ''}</td></tr>` : '';
+    const over = prod.litres >= prod.target ? `<tr><td style="padding-top:6px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;color:#0d6a4d;">&#127881; Target reached${prod.litres > prod.target ? ' &mdash; ' + fmtL(prod.litres - prod.target) + ' L over' : ''}</td></tr>` : '';
     return `
       <tr><td style="height:16px;"></td></tr>
       <tr><td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E7E5DE;border-top:4px solid #99D6EA;border-radius:8px;">
           <tr>
             ${png ? `<td width="150" valign="middle" align="center" style="padding:10px 6px 10px 14px;vertical-align:middle;"><img src="${png}" width="130" height="180" alt="Fermenter showing ${pctText}% of the annual production target" style="display:block;width:130px;height:180px;"></td>` : ''}
             <td valign="middle" style="padding:10px 16px;vertical-align:middle;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</td></tr>
-                <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:40px;line-height:1.1;color:#14161a;padding-top:4px;">${pctText}<span style="font-size:18px;color:#0d6a4d;">%</span></td></tr>
-                <tr><td style="font-family:'Courier New',Courier,monospace;font-size:12px;color:#55585F;padding-top:4px;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of <b style="color:#14161a;">${fmtL(prod.target)}</b> litres packaged</td></tr>
-                <tr><td style="font-family:'Courier New',Courier,monospace;font-size:12px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</td></tr>
+                <tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">Annual production target</td></tr>
+                <tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:800;font-size:40px;line-height:1.1;color:#14161a;padding-top:4px;">${pctText}<span style="font-size:18px;color:#0d6a4d;">%</span></td></tr>
+                <tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;color:#55585F;padding-top:4px;"><b style="color:#14161a;">${fmtL(prod.litres)}</b> of <b style="color:#14161a;">${fmtL(prod.target)}</b> litres packaged</td></tr>
+                <tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;color:#55585F;">Remaining: <b style="color:#14161a;">${fmtL(Math.max(0, prod.target - prod.litres))}</b> L</td></tr>
                 ${over}
               </table>
             </td>
@@ -737,22 +744,22 @@
   }
   function buildEmailHtml(gaugePng) {
     const covered = weekData.days.filter(d => d.tabName).map(d => d.label).join(', ') || 'none';
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E5E5E5;border-radius:16px;max-width:900px;width:100%;">
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E7E5DE;border-radius:14px;max-width:900px;width:100%;border-collapse:separate;">
+      <tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td width="25%" height="5" bgcolor="#47D7AC" style="height:5px;line-height:5px;font-size:0;border-radius:14px 0 0 0;">&nbsp;</td><td width="25%" height="5" bgcolor="#FDAA63" style="height:5px;line-height:5px;font-size:0;">&nbsp;</td><td width="25%" height="5" bgcolor="#7566A0" style="height:5px;line-height:5px;font-size:0;">&nbsp;</td><td width="25%" height="5" bgcolor="#99D6EA" style="height:5px;line-height:5px;font-size:0;border-radius:0 14px 0 0;">&nbsp;</td></tr></table></td></tr>
       <tr><td style="padding:16px 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr><td>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
               <td width="40%"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                <td style="width:30px;"><img src="${LOGO_PNG}" width="30" height="30" alt="Balter" style="display:block;width:30px;height:30px;"></td>
+                <td style="width:40px;"><img src="${LOGO_PNG}" width="40" height="40" alt="Balter" style="display:block;width:40px;height:40px;"></td>
                 <td style="padding-left:8px;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:14px;color:#14161a;line-height:1.15;">Weekly Ops</td></tr>
-                  <tr><td style="font-family:Arial,Helvetica,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#9a9da3;padding-top:1px;">Balter Brewing</td></tr></table>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:600;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#7566A0;">Balter Brewing</td></tr><tr><td style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:700;font-size:18px;color:#000000;line-height:1.15;padding-top:2px;">Weekly Ops</td></tr></table>
                 </td>
               </tr></table></td>
-              <td width="60%" align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(rangeText())}</td>
+              <td width="60%" align="right" style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12.5px;font-weight:700;color:#14161a;">&#128197; ${escHtml(rangeText())}</td>
             </tr></table>
           </td></tr>
-          <tr><td style="padding-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
+          <tr><td style="padding-top:6px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:10.5px;color:#9a9da3;">Executive Summary points from the daily 9AM meeting &middot; days with a tab: ${escHtml(covered)}</td></tr>
           ${emailTopRow(gaugePng)}
           ${weekData.sections.filter(sc => visibleItems(sc).length).map(emailSection).join('')}
         </table>
@@ -949,7 +956,7 @@ function parseLbb(XLSX, data) {
     return card;
   }
   // target card with the projection to its right (falls back to whichever exists)
-  const CARD_BORDER = 'border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;';
+  const CARD_BORDER = 'border:1px solid #E7E5DE;border-top:4px solid #99D6EA;border-radius:8px;';
   function emailTopRow(png) {
     const unwrap = s => s.replace(/^\s*<tr><td style="height:1\d?px;"><\/td><\/tr>\s*<tr><td>/, '').replace(/<\/td><\/tr>\s*$/, '');
     const g = emailGauge(png), pr = emailProjection(true);
@@ -966,22 +973,22 @@ function parseLbb(XLSX, data) {
     const how = projHow(p);
     const col = (title, val, howText) => {
       const wd = stack ? '100%' : '50%';
-      if (val === null) return `<td valign="top" width="${wd}" style="padding:10px 14px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#55585F;"><b style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;">${title}</b><br>Not enough completed weeks on the board yet.</td>`;
+      if (val === null) return `<td valign="top" width="${wd}" style="padding:10px 14px;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;color:#55585F;"><b style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;">${title}</b><br>Not enough completed weeks on the board yet.</td>`;
       const v = projVsTarget(val, p.target), fill = Math.min(100, v.pct);
       return `<td valign="top" width="${wd}" style="padding:10px 14px;">
-        <div style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">${title}</div>
-        <div style="font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:24px;line-height:1.2;color:#14161a;padding-top:3px;">${fmtL(val)} <span style="font-size:12px;color:#9a9da3;">L</span></div>
-        <div style="font-family:'Courier New',Courier,monospace;font-size:12px;color:#55585F;padding-top:2px;"><b style="color:#14161a;">${v.pct.toFixed(1)}%</b> of target &middot; <b style="color:${v.over ? '#0d6a4d' : '#B5532F'};">${v.text}</b></div>
+        <div style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">${title}</div>
+        <div style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:800;font-size:24px;line-height:1.2;color:#14161a;padding-top:3px;">${fmtL(val)} <span style="font-size:12px;color:#9a9da3;">L</span></div>
+        <div style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:12px;color:#55585F;padding-top:2px;"><b style="color:#14161a;">${v.pct.toFixed(1)}%</b> of target &middot; <b style="color:${v.over ? '#0d6a4d' : '#B5532F'};">${v.text}</b></div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;"><tr>
           <td width="${fill.toFixed(0)}%" height="10" bgcolor="#47D7AC" style="height:10px;font-size:0;line-height:0;">&nbsp;</td>
           <td height="10" bgcolor="#EEF1F3" style="height:10px;font-size:0;line-height:0;">&nbsp;</td></tr></table>
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:10.5px;line-height:1.4;color:#9a9da3;padding-top:6px;">${escHtml(howText)}</div></td>`;
+        <div style="font-family:'Lexend','Segoe UI',Arial,sans-serif;font-size:10.5px;line-height:1.4;color:#9a9da3;padding-top:6px;">${escHtml(howText)}</div></td>`;
     };
     return `
       <tr><td style="height:14px;"></td></tr>
       <tr><td>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #EAEAEA;border-left:4px solid #99D6EA;border-radius:8px;">
-          <tr><td style="padding:10px 14px 0;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">End-of-year projection &middot; from the Live Brewery Board</td></tr>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E7E5DE;border-top:4px solid #99D6EA;border-radius:8px;">
+          <tr><td style="padding:10px 14px 0;font-family:'Lexend','Segoe UI',Arial,sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#55585F;">End-of-year projection &middot; from the Live Brewery Board</td></tr>
           ${stack ? `<tr>${col('Production schedule', p.schedProj, how.sched)}</tr><tr>${col(lbb.year + ' average', p.avgProj, how.avg)}</tr>` : `<tr>${col('Production schedule', p.schedProj, how.sched)}${col(lbb.year + ' average', p.avgProj, how.avg)}</tr>`}
         </table>
       </td></tr>`;
@@ -1080,7 +1087,7 @@ function parseLbb(XLSX, data) {
       <path d="M50 112 H170 M50 178 H170" stroke="#6f767d" stroke-width="3" opacity=".55"/>
       <ellipse cx="148" cy="146" rx="13" ry="16" fill="none" stroke="#6f767d" stroke-width="3"/>
       <path d="${shape}" fill="none" stroke="#6f767d" stroke-width="5" stroke-linejoin="round"/>
-      ${[25, 50, 75, 100].map(p => { const y = TANK_BOT - TANK_H * p / 100; return `<path d="M176 ${y} h12" stroke="#9a9da3" stroke-width="2"/><text x="194" y="${y + 4}" font-family="JetBrains Mono, monospace" font-size="12" fill="#6b6f76">${p}%</text>`; }).join('')}
+      ${[25, 50, 75, 100].map(p => { const y = TANK_BOT - TANK_H * p / 100; return `<path d="M176 ${y} h12" stroke="#9a9da3" stroke-width="2"/><text x="194" y="${y + 4}" font-family="Lexend, sans-serif" font-size="12" fill="#6b6f76">${p}%</text>`; }).join('')}
     </svg>`;
   }
   function buildProductionCard() {

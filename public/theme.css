@@ -1,0 +1,114 @@
+/* =========================================================
+   BALTER BREWING — shared theme (same visual system as the
+   Daily Packaging Handover): Lexend, white canvas, rising mint
+   bubbles, sticky four-colour top bar, top-accent cards.
+   Loaded AFTER each page's own <style>, so it wins on specificity.
+   ========================================================= */
+@font-face{
+  font-family:"Lexend";
+  src: local("Lexend"), url("/fonts/lexend-latin-wght-normal.woff2") format("woff2");
+  font-weight:100 900; font-style:normal; font-display:swap;
+}
+:root{ --line-h:#E7E5DE; }
+body{ margin:0; background:#fff; font-family:"Lexend","Segoe UI",system-ui,-apple-system,Arial,sans-serif; }
+::selection{ background:#47D7AC; color:#000; }
+
+body #app{
+  --mint-ink:#1E9C78; --purple:#7566A0;
+  --ink:#000; --ink-soft:#6B685D; --muted:#A8A596; --paper:#FAFAF7;
+  --line:#E7E5DE; --line-soft:#EFEDE6;
+  --radius-sm:9px; --radius-md:10px; --radius-lg:14px;
+  --shadow-card:0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.05);
+  --shadow-pop:0 12px 32px -8px rgba(0,0,0,.25);
+  --font-display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --font-body:"Lexend","Segoe UI",system-ui,sans-serif;
+  --font-data:"Lexend","Segoe UI",system-ui,sans-serif;
+  font-family:var(--font-body); position:relative; z-index:1;
+  padding:0; max-width:none; margin:0;
+}
+body #app .frame{ padding:0 0 60px; }
+/* page content sits in a centred column under the full-width sticky bar */
+body #app .frame > :not(.topbar){ width:calc(100% - 48px); max-width:1400px; margin-left:auto; margin-right:auto; }
+body #app .frame > :not(.topbar):first-of-type, body #app .frame > .topbar + *{ margin-top:22px; }
+
+/* ---- bubbles ---- */
+.bubbles{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.bubbles span{ position:absolute; bottom:-40px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.95), rgba(71,215,172,.12));
+  border:1px solid rgba(71,215,172,.28); animation:bub-rise linear infinite; }
+@keyframes bub-rise{ 0%{transform:translateY(0) scale(1);opacity:0} 10%{opacity:.7} 100%{transform:translateY(-115vh) scale(1.15);opacity:0} }
+@media (prefers-reduced-motion: reduce){ .bubbles{display:none} }
+
+/* ---- top bar ---- */
+body #app .topbar{
+  position:sticky; top:0; z-index:40; margin:0 0 0; border:0; border-top:5px solid; border-radius:0;
+  border-image:linear-gradient(90deg,#47D7AC 0 25%,#FDAA63 25% 50%,#7566A0 50% 75%,#99D6EA 75% 100%) 1;
+  background:rgba(255,255,255,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  box-shadow:0 1px 0 var(--line);
+  padding:12px max(24px, calc((100% - 1400px) \/ 2 + 24px)); gap:14px;
+}
+body #app .brand{ gap:14px; }
+body #app .brand__mark, body #app .brand__logo{ width:44px; height:44px; }
+body #app .brand__text{ line-height:1.1; }
+body #app .brand__title{ font-size:21px; font-weight:700; letter-spacing:-.01em; margin-top:3px; }
+body #app .brand__sub{ order:-1; font-size:10.5px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--purple); margin-top:0; }
+body #app .topbar-nav{ gap:8px; justify-content:flex-end; }
+body #app .date-pill{ font-weight:600; font-size:13px; }
+body #app .date-pill .ico, body #app .gmail-icon-btn, body #app .refresh-icon-btn{ border:1px solid var(--line); border-radius:10px; }
+
+/* ---- buttons ---- */
+body #app .btn{
+  border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:10px;
+  padding:9px 14px; font-size:13px; font-weight:600; line-height:1.1; font-family:var(--font-body);
+  transition:transform .12s ease,border-color .12s ease,background .12s ease,color .12s ease;
+}
+body #app .btn:hover:not(:disabled){ border-color:var(--purple); transform:translateY(-1px); }
+body #app .btn:active{ transform:none; }
+body #app .btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--line); }
+body #app .btn.ghost:hover:not(:disabled){ background:transparent; }
+body #app .btn.primary{ background:#47D7AC; border-color:#47D7AC; color:#000; }
+body #app .btn.primary:hover:not(:disabled){ background:#000; border-color:#000; color:#fff; }
+body #app .btn.weekly-btn.current, body #app .btn.btn.weekly-btn.current{ background:#000; border-color:#000; color:#fff; }
+body #app .btn[href="/logout"]{ color:var(--ink-soft); }
+body #app .btn[href="/logout"]:hover{ color:#e56659; border-color:#e56659; background:#fdeceb; }
+body #app .wk-btn{ border-radius:8px; border:1px solid var(--line); }
+body #app .lti-pill{ border:1px solid var(--line); }
+body #app .lti-pill .num{ font-family:var(--font-body); }
+
+/* ---- cards: accent bar on top instead of the left edge ---- */
+body #app :is(.card,.wins-card,.ntk-card,.prod-card,.wx-card,.wk-card,.proj-card){
+  --bar:var(--card-accent, var(--accent, #47D7AC));
+  position:relative; border:1px solid var(--line); border-left:1px solid var(--line);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding-top:4px; background:#fff;
+}
+body #app :is(.card,.wins-card,.ntk-card,.prod-card,.wx-card,.wk-card,.proj-card)::before{
+  content:""; position:absolute; left:-1px; right:-1px; top:-1px; height:4px; z-index:2;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0; background:var(--bar);
+}
+body #app .wins-card{ --bar:var(--pale); }
+body #app .ntk-card{ --bar:var(--slate); }
+body #app .ntk-card.exec{ --bar:var(--xpa, #47D7AC); }
+body #app .prod-card, body #app .proj-card{ --bar:var(--sky); }
+body #app .wx-card{ --bar:var(--apricot); }
+body #app .prod-card{ padding-top:20px; }
+body #app .card-head{ font-weight:700; font-size:13px; }
+body #app .card-head .tabicon{ transform:none; border-radius:10px; }
+body #app .wk-ico{ transform:none; border-radius:10px; }
+body #app .section-label, body #app .kpi-row .lbl{ letter-spacing:.12em; }
+body #app .section-label{ font-size:10.5px; font-weight:600; }
+body #app .kpi-row .val, body #app .prod-pct, body #app .prod-line{ font-variant-numeric:tabular-nums; }
+body #app .prod-pct{ font-weight:700; }
+body #app .ntk-sum, body #app .wk-edit, body #app .prod-input-wrap{ border-radius:var(--radius-md); }
+body #app .modal{ border-radius:var(--radius-lg); }
+body #app .banner{ border-radius:var(--radius-md); }
+body #app #toastMsg{ border-radius:12px; background:#000; }
+body #app .empty-state{ position:relative; z-index:1; }
+@media (max-width:600px){
+  body #app .topbar{ padding:10px 16px; }
+  body #app .frame > :not(.topbar){ width:calc(100% - 32px); }
+  body #app .brand__title{ font-size:18px; }
+}
+
+body #app .proj-card{ padding-top:22px; }
+body #app .topbar-nav{ justify-content:flex-end !important; }
+.modal-backdrop .modal{ background:#fff; font-family:"Lexend","Segoe UI",system-ui,sans-serif; border-radius:14px; }

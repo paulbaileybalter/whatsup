@@ -57,3 +57,6 @@ Linked from the "Newsletter" button on the 9AM page. It reads every day's tab fo
 - Drop the Live Brewery Board `.xlsx` onto the box on that page. It is read in the browser (nothing is uploaded) using the vendored SheetJS reader in `public/vendor/xlsx.mini.min.js`. Per day it sums the Cartons (rows 36-39) and Kegs (rows 40-43) quantities, and keeps only the board's latest year in this browser's localStorage (`balter_lbb_v1`).
 - Two projections: packaged total + the board's plan to its last day (+ remaining days at the year's average), and packaged total + the year's average weekly volume x weeks left. Litres per carton (6 = 16 x 375 mL) and per keg (49.5) are editable under "Conversion assumptions".
 - Both projections are included in the weekly email once a board has been loaded.
+
+## Look & feel (16 Nov 2026)
+All three pages share `public/theme.css` (loaded after each page's own styles), matching the Daily Packaging Handover site: Lexend (`public/fonts/`), white canvas, rising mint bubbles (`public/bubbles.js`), sticky four-colour top bar, top-accent-bar cards, `.btn` styling, favicons + `manifest.json`. The login page uses the same style; only the font and favicon are served before login. To tweak the look site-wide, edit `theme.css`.

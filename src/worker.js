@@ -60,35 +60,37 @@ function loginPageHtml(showError) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Balter, What's Up — Login</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#47D7AC">
 <style>
+  @font-face { font-family: "Lexend"; src: local("Lexend"), url("/fonts/lexend-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
   * { box-sizing: border-box; }
   body {
-    font-family: 'Inter', ui-sans-serif, sans-serif;
-    background: #F5F5F4; display: flex; align-items: center; justify-content: center;
+    font-family: "Lexend", "Segoe UI", system-ui, sans-serif;
+    background: #fff; border-top: 5px solid; border-image: linear-gradient(90deg,#47D7AC 0 25%,#FDAA63 25% 50%,#7566A0 50% 75%,#99D6EA 75% 100%) 1; display: flex; align-items: center; justify-content: center;
     min-height: 100vh; margin: 0; padding: 20px;
   }
   .card {
-    background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 18px;
+    background: #fff; border: 1px solid #E7E5DE; border-radius: 14px; position: relative;
     padding: 36px 34px; width: 100%; max-width: 360px;
-    box-shadow: 0 12px 32px -8px rgba(20,22,26,.18);
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.05);
   }
-  .mark { width: 34px; height: 34px; margin-bottom: 14px; }
-  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 19px; margin: 0 0 4px; color: #14161a; }
+  .card::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 4px; border-radius: 14px 14px 0 0; background: #47D7AC; }
+  .eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #7566A0; margin: 0; }
+  .mark { width: 44px; height: 44px; margin-bottom: 14px; }
+  h1 { font-size: 21px; font-weight: 700; letter-spacing: -.01em; margin: 3px 0 6px; color: #000; }
   p.sub { color: #6b7280; font-size: 13px; margin: 0 0 22px; }
   label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
   input[type=password] {
-    width: 100%; padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: 10px;
+    width: 100%; padding: 10px 12px; border: 1px solid #E7E5DE; border-radius: 10px;
     font-size: 14px; margin-bottom: 16px; font-family: inherit;
   }
   input[type=password]:focus { outline: none; border-color: #47D7AC; box-shadow: 0 0 0 3px rgba(71,215,172,.25); }
   button {
-    width: 100%; padding: 11px; border: none; border-radius: 999px; background: #14161a;
-    color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit;
+    width: 100%; padding: 11px; border: 1px solid #47D7AC; border-radius: 10px; background: #47D7AC;
+    color: #000; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit;
   }
-  button:hover { background: #26282d; }
+  button:hover { background: #000; border-color: #000; color: #fff; }
   .error {
     background: #FDEEEE; color: #A32A2A; border: 1px solid #F3B9B9; border-radius: 8px;
     padding: 9px 12px; font-size: 12.5px; margin-bottom: 16px;
@@ -101,7 +103,8 @@ function loginPageHtml(showError) {
       <path fill="#47D7AC" d="M136.3,70.4l-9.4-9.4c-1.6-1.6-4.3-1.6-6,0-1.6,1.6-1.6,4.3,0,6l2.3,2.3c-9.6,13.2-25.2,21.7-42.7,21.7s-33.1-8.6-42.7-21.8l2.3-2.3c1.6-1.6,1.6-4.3,0-6-1.6-1.6-4.3-1.6-6,0l-9.4,9.4c-1.6,1.6-1.6,4.3,0,6,.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2l1.1-1.1c11.2,14.7,28.9,24.2,48.7,24.2s37.5-9.5,48.7-24.2l1.1,1.1c.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2c1.6-1.6,1.6-4.3,0-6"/>
       <path fill="#47D7AC" d="M152.5,8.5v144H8.5V8.5h144M161,0H0v161h161V0h0Z"/>
     </svg>
-    <h1>Balter, What's Up</h1>
+    <p class="eyebrow">Balter Brewing</p>
+    <h1>9AM What's Up Meeting</h1>
     <p class="sub">Enter the site password to continue.</p>
     ${showError ? `<div class="error">Incorrect password — try again.</div>` : ''}
     <label for="password">Password</label>
@@ -361,6 +364,11 @@ export default {
       const headers = new Headers({ Location: '/login' });
       headers.append('Set-Cookie', sessionCookieHeader('', 0));
       return new Response(null, { status: 302, headers });
+    }
+
+    // --- Public brand assets used by the login page ---
+    if (url.pathname === '/fonts/lexend-latin-wght-normal.woff2' || url.pathname === '/assets/favicon.svg') {
+      return env.ASSETS.fetch(request);
     }
 
     // --- Everything else requires a valid session ---
