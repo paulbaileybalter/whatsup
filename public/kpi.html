@@ -651,13 +651,13 @@
   const BUSY_TEXT = /\b(busy|big day|huge day|heavy day|hectic|flat out|full on|full-on|lots of (?:deliveries|pick[\s-]?ups|trucks|orders)|high volume of (?:deliveries|trucks|orders)|back[\s-]?to[\s-]?back (?:deliveries|trucks))\b/i;
   const ON_ROAD_TEXT = /\b(on the road|out on the road|out on (?:a )?(?:delivery|run)|on (?:a )?(?:delivery|run)|driver(?:s)? (?:is|are|out|away|off)|truck(?:s)? (?:is|are)? ?out|delivering|out delivering|doing deliveries|interstate)\b/i;
   // "All good", "running well", "no issues"... are not KPI events
-  const POSITIVE = /\b(all good|all fine|all ok|all okay|all normal|all running|running (?:well|smoothly|fine|normally|ok|okay)|runs? (?:well|smoothly)|looking (?:good|great|fine|ok|okay)|looks (?:good|great|fine|ok|okay)|going (?:well|smoothly|great)|went (?:well|smoothly)|good to go|operating (?:normally|well|fine)|working (?:well|fine|great)|performing (?:well|fine)|on (?:track|schedule|plan)|as (?:planned|scheduled|expected)|no (?:drama|dramas)|nothing to report|smooth(?:ly)?|fine|great|good|normal|ok|okay)\b/i;
+  const POSITIVE = /\b(plates? (?:are |is )?(?:all )?clear(?:ed)?(?: today)?|all clear|clear today|(?:now |been |all )?released?(?: today| to (?:market|packaging|trade))?|released and (?:packaged|packing)|passed|passed (?:micro|qc|qa|physchem|sensory)|all (?:in )?spec|in spec|approved|cleared for (?:release|packaging)|all good|all fine|all ok|all okay|all normal|all running|running (?:well|smoothly|fine|normally|ok|okay)|runs? (?:well|smoothly)|looking (?:good|great|fine|ok|okay)|looks (?:good|great|fine|ok|okay)|going (?:well|smoothly|great)|went (?:well|smoothly)|good to go|operating (?:normally|well|fine)|working (?:well|fine|great)|performing (?:well|fine)|on (?:track|schedule|plan)|as (?:planned|scheduled|expected)|no (?:drama|dramas)|nothing to report|smooth(?:ly)?|fine|great|good|normal|ok|okay)\b/i;
   const NEG_PROBLEM = /\b(no|nil|zero|without|nothing)\s+(?:\w+\s+){0,2}(?:issues?|problems?|faults?|breakdowns?|incidents?|concerns?|delays?|complaints?|stoppages?|downtime|losses|leaks?|dramas?)\b/gi;
   function kpiRelevant(team, label, text, rag, ntk) {
     if (!text || TRIVIAL.test(text) || NEGATED.test(text) || NOISE.test(text)) return false;
     {
       const stripped = text.replace(NEG_PROBLEM, ' ').replace(new RegExp(POSITIVE.source, 'gi'), ' ');
-      if (stripped !== text.replace(/\s+/g, ' ') && rag !== 'red' && !CATEGORIES.some(([, re]) => re.test(stripped)) && !/\b(stop|hold|dump|fail|break|down|delay|late|lost|loss|leak|fault|issue|problem)/i.test(stripped)) return false;
+      if (stripped !== text.replace(/\s+/g, ' ') && rag !== 'red' && !/\b(not (?:yet )?(?:released?|cleared|passed|in spec)|unreleased|awaiting release|pending release)\b/i.test(text) && !CATEGORIES.some(([, re]) => re.test(stripped)) && !/\b(stop|hold|dump|fail|break|down|delay|late|lost|loss|leak|fault|issue|problem|pending|not (?:yet )?(?:released?|cleared|passed|in spec)|unreleased|out of spec)/i.test(stripped)) return false;
     }
     if (STAFFING_LABEL.test(label || '')) return false;
     const cat = categorise(label, text);
@@ -692,7 +692,7 @@
   }
   async function harvest(force) {
     st = loadState(); busy = {}; errors = {}; editing = null; drafts = {}; catFilter = 'All';
-    const key = 'kpi_harvest_v3_' + ym;
+    const key = 'kpi_harvest_v4_' + ym;
     if (!force && ym < nowYm()) { // past months rarely change, so reuse what we read last time
       try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && Array.isArray(c.events)) { events = c.events; dayInfo = c.dayInfo || []; loading = false; render(); return; } } catch (e) {}
     }
