@@ -269,6 +269,10 @@
   .nl-grid .wk-summary .wk-link { display: block; }
   @media (max-width: 800px) { .nl-grid { grid-template-columns: 1fr; } }
 
+  .kpi-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-left: auto; }
+  .kpi-seg-b { border: 0; background: #fff; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 5px 13px; cursor: pointer; color: var(--ink); }
+  .kpi-seg-b.on { background: #000; color: #fff; }
+  .kpi-day-n { color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; margin-left: 8px; font-size: 11px; }
   .kpi-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
   .kpi-chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 5px 11px; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
   .kpi-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
@@ -602,6 +606,7 @@
   let busy = {}, errors = {};
   let editing = null, drafts = {};
   let catFilter = 'All';
+  let viewMode = (function () { try { return localStorage.getItem('kpi_view_v1') === 'area' ? 'area' : 'date'; } catch (e) { return 'date'; } })();
 
   function emptyState() { return { summary: null, keyPoints: [], excluded: [] }; }
   const stKey = () => 'kpi_state_v1_' + ym;
@@ -614,9 +619,9 @@
     ['Stop work',   /stop(ped)?[\s-]*(work|production|the line)|work stoppage|critical repair|stop production/i],
     ['Bad batch',   /bad batch|dump(ed|ing)?\b|dumped|tipped|down the drain|out of spec|off[\s-]?spec|oos\b|failed (micro|qa|qc|test|spec)|micro (fail|issue|positive)|contaminat|infect|spoil|off[\s-]?flavour|diacetyl|re-?work|re-?process|downgrad|write[\s-]?off|blocked stock|\bhold\b|on hold|quarantin|recall/i],
     ['Shutdown',    /shut[\s-]?down|shutting down|plant (down|offline)|line (is )?down|offline|out of (service|action)|power (outage|failure|loss)|outage|not running|unable to (run|brew|package|can|keg)|cancel(l)?ed (run|brew|pack)/i],
-    ['Loss',        /\bloss(es)?\b|lost\b|waste|wasted|spill|leak(s|ed|ing)?|shrink|yield|rejects?|scrap|short(age|fall)?|out of stock|stock[\s-]?out|under[\s-]?fill|over[\s-]?fill|beer lost|litres? lost|\bhl lost|\bL lost/i],
+    ['Loss',        /\bloss(es)?\b|lost\b|waste|wasted|spill|leak(s|ed|ing)?|yield|rejects?|scrap|shortage|shortfall|out of stock|stock[\s-]?out|under[\s-]?fill|over[\s-]?fill|beer lost|litres? lost|\bhl lost|\bL lost/i],
     ['Breakdown',   /break[\s-]?down|broke(n)?\b|fault|failed|failure|jam(med)?|blown|burst|seized|not working|faulty|repair|damaged|malfunction|trip(ped)?\b|alarm|slow (tx|transfer)|downtime|down time|stuck/i],
-    ['Safety',      /injur|incident|near[\s-]?miss|lti\b(?!\s*free)|first aid|medical|hazard|spill|evacuat|unsafe|stop[\s-]?work authority/i],
+    ['Safety',      /injur|incident|\bfire\b|explosion|ammonia|co2 leak|gas leak|near[\s-]?miss|lti\b(?!\s*free)|first aid|medical|hazard|spill|evacuat|unsafe|stop[\s-]?work authority/i],
     ['Delay',       /delay(ed|s)?|late\b|behind|postpone|pushed back|reschedul|bumped|waiting (on|for)|missed|backlog|constraint|no (cans|kegs|bottles|ingredient|labels)|supplier|out of (cans|kegs|labels|hops|malt|co2)/i],
     ['Complaint',   /complaint|customer (issue|concern)|returned|return(s)?\b|refund|credit note/i],
   ];
@@ -636,11 +641,29 @@
     for (const [name, re] of CATEGORIES) if (re.test(label || '')) return name;
     return 'Other';
   }
-  function kpiRelevant(label, text, rag, ntk) {
+  // Teams the KPI review focuses on. Other teams only count when something serious happened.
+  const FOCUS_TEAMS = ['QC', 'Brew & Cellar', 'Packaging', 'Maintenance', 'Engineering'];
+  const STRONG = ['Stop work', 'Bad batch', 'Shutdown', 'Loss', 'Breakdown', 'Safety'];
+  // Not KPI events: staffing, cover, leave/sick, busy days, drivers out on the road
+  const STAFFING_LABEL = /staffing/i;
+  const PEOPLE_TEXT = /\b(sick|off sick|sick leave|on leave|annual leave|leave today|away|absent|day off|rdo|holiday|not in today|out today|called in|covering|covered|cover for|covers for|fill(?:ing|ed)? in|back[\s-]?fill|swap(?:ped)? (?:shifts?|days?)|shift swap|short[\s-]?staffed|short on staff|training day|induction)\b/i;
+  const BUSY_TEXT = /\b(busy|big day|huge day|heavy day|hectic|flat out|full on|full-on|lots of (?:deliveries|pick[\s-]?ups|trucks|orders)|high volume of (?:deliveries|trucks|orders)|back[\s-]?to[\s-]?back (?:deliveries|trucks))\b/i;
+  const ON_ROAD_TEXT = /\b(on the road|out on the road|out on (?:a )?(?:delivery|run)|on (?:a )?(?:delivery|run)|driver(?:s)? (?:is|are|out|away|off)|truck(?:s)? (?:is|are)? ?out|delivering|out delivering|doing deliveries|interstate)\b/i;
+  function kpiRelevant(team, label, text, rag, ntk) {
     if (!text || TRIVIAL.test(text) || NEGATED.test(text) || NOISE.test(text)) return false;
+    if (STAFFING_LABEL.test(label || '')) return false;
+    const cat = categorise(label, text);
+    const strong = CATEGORIES.slice(0, 5).some(([, re]) => re.test(text));
+    // people / busy-day / on-the-road chatter is dropped unless the same entry also reports real equipment or product trouble
+    if ((PEOPLE_TEXT.test(text) || BUSY_TEXT.test(text)) && !strong) return false;
+    if (team === 'Logistics' && ON_ROAD_TEXT.test(text) && !strong) return false;
+    const focus = FOCUS_TEAMS.includes(team);
+    if (!focus) {
+      // other areas: only serious events (stop work, bad batch, shutdown, loss, breakdown, safety incident) or a red flag
+      return rag === 'red' || STRONG.includes(cat);
+    }
     if (rag === 'red' || rag === 'amber') return true;
     if (FLAG_LABELS.some(re => re.test(label || ''))) return true;
-    if (ntk && CATEGORIES.some(([, re]) => re.test(text))) return true;
     return CATEGORIES.some(([, re]) => re.test(text));
   }
 
@@ -661,7 +684,7 @@
   }
   async function harvest(force) {
     st = loadState(); busy = {}; errors = {}; editing = null; drafts = {}; catFilter = 'All';
-    const key = 'kpi_harvest_v1_' + ym;
+    const key = 'kpi_harvest_v2_' + ym;
     if (!force && ym < nowYm()) { // past months rarely change, so reuse what we read last time
       try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && Array.isArray(c.events)) { events = c.events; dayInfo = c.dayInfo || []; loading = false; render(); return; } } catch (e) {}
     }
@@ -691,7 +714,7 @@
         const o = r.owner[sec.key]; if (!o) return;
         o.bullets.forEach(b => {
           const text = (b.value || '').replace(/\s+/g, ' ').trim();
-          if (!kpiRelevant(b.label, text, b.rag, ntkSet.has(normLabel(text)))) return;
+          if (!kpiRelevant(sec.title, b.label, text, b.rag, ntkSet.has(normLabel(text)))) return;
           const k = sec.key + '|' + normLabel(text);
           if (!map.has(k)) map.set(k, { team: areaName(sec.title), label: b.label || '', text, rag: b.rag || '', category: categorise(b.label, text), days: [], ntk: false });
           const e = map.get(k);
@@ -877,7 +900,7 @@
 
     // ---- 3. Chronological events ----
     {
-      const t = card('Every mention that may have affected KPIs — in date order', '🗓️', 'var(--sky)');
+      const t = card('Every mention that may have affected KPIs', '🗓️', 'var(--sky)');
       const cats = ['All', ...CATEGORIES.map(c => c[0]), 'Other'].filter(c => c === 'All' || events.some(e => e.category === c));
       const chips = el('div', 'kpi-chips');
       cats.forEach(c => {
@@ -886,19 +909,44 @@
         b.addEventListener('click', () => { catFilter = c; render(); });
         chips.appendChild(b);
       });
+      const seg = el('div', 'kpi-seg');
+      [['date', 'By date'], ['area', 'By area']].forEach(([k, l]) => {
+        const b = el('button', 'kpi-seg-b' + (viewMode === k ? ' on' : ''), l); b.type = 'button';
+        b.addEventListener('click', () => { viewMode = k; try { localStorage.setItem('kpi_view_v1', k); } catch (e) {} render(); });
+        seg.appendChild(b);
+      });
+      t.head.appendChild(seg);
       t.body.appendChild(chips);
       t.body.appendChild(el('div', 'prod-updated', 'Remove anything that did not really affect a KPI — removed items are left out of the AI summary next time you press Redo.'));
-      let lastDay = null;
-      events.filter(e => catFilter === 'All' || e.category === catFilter).forEach(e => {
-        if (e.first !== lastDay) { lastDay = e.first; t.body.appendChild(el('div', 'kpi-day', escHtml(`${e.first} ${MONTHS[parseInt(ym.slice(5), 10) - 1]}`))); }
+      const shown = events.filter(e => catFilter === 'All' || e.category === catFilter);
+      const mon = MONTHS[parseInt(ym.slice(5), 10) - 1];
+      const mkRow = (e, byArea) => {
         const off = st.excluded.includes(e.id);
         const row = el('div', 'kpi-ev' + (off ? ' off' : ''));
         row.style.setProperty('--cat', CAT_COLOURS[e.category] || '#c9c6ba');
-        row.innerHTML = `<div class="kpi-ev-top"><span class="kpi-cat">${escHtml(e.category)}</span><b>${escHtml(e.team)}</b>${e.label ? `<span class="kpi-lab">${escHtml(e.label.length > 60 ? e.label.slice(0, 58) + '…' : e.label)}</span>` : ''}${e.rag ? `<span class="kpi-rag ${e.rag}">${e.rag}</span>` : ''}${e.ntk ? '<span class="kpi-rag ntk">Need to know</span>' : ''}<span class="kpi-when">${e.days.length > 1 ? escHtml(e.when) : ''}</span></div><div class="kpi-ev-text">${escHtml(e.text)}</div>`;
-        const x = btn(off ? '↺ Put back' : '✕ Remove', 'wk-x kpi-x', () => { st.excluded = off ? st.excluded.filter(i => i !== e.id) : [...st.excluded, e.id]; saveState(); render(); });
-        row.appendChild(x);
-        t.body.appendChild(row);
-      });
+        row.innerHTML = `<div class="kpi-ev-top"><span class="kpi-cat">${escHtml(e.category)}</span><b>${escHtml(byArea ? e.when.replace(/ \(\d+ days\)$/, '') : e.team)}</b>${e.label ? `<span class="kpi-lab">${escHtml(e.label.length > 60 ? e.label.slice(0, 58) + '…' : e.label)}</span>` : ''}${e.rag ? `<span class="kpi-rag ${e.rag}">${e.rag}</span>` : ''}${e.ntk ? '<span class="kpi-rag ntk">Need to know</span>' : ''}<span class="kpi-when">${e.days.length > 1 ? (byArea ? escHtml(e.days.length + ' days') : escHtml(e.when)) : ''}</span></div><div class="kpi-ev-text">${escHtml(e.text)}</div>`;
+        row.appendChild(btn(off ? '↺ Put back' : '✕ Remove', 'wk-x kpi-x', () => { st.excluded = off ? st.excluded.filter(i => i !== e.id) : [...st.excluded, e.id]; saveState(); render(); }));
+        return row;
+      };
+      if (viewMode === 'date') {
+        let lastDay = null;
+        shown.forEach(e => {
+          if (e.first !== lastDay) { lastDay = e.first; t.body.appendChild(el('div', 'kpi-day', escHtml(`${e.first} ${mon}`))); }
+          t.body.appendChild(mkRow(e, false));
+        });
+      } else {
+        const ORDER = ['QC', 'Brew Team', 'Pack Team', 'Maintenance', 'Engineering'];
+        const teams = [...new Set(shown.map(e => e.team))].sort((a, b) => {
+          const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
+          return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b);
+        });
+        teams.forEach(tm => {
+          const list = shown.filter(e => e.team === tm);
+          const cnt = {}; list.forEach(e => { cnt[e.category] = (cnt[e.category] || 0) + 1; });
+          t.body.appendChild(el('div', 'kpi-day', `${escHtml(tm)} <span class="kpi-day-n">${list.length} mention${list.length === 1 ? '' : 's'} · ${Object.entries(cnt).map(([c, n]) => `${n} ${escHtml(c.toLowerCase())}`).join(', ')}</span>`));
+          list.forEach(e => t.body.appendChild(mkRow(e, true)));
+        });
+      }
       frame.appendChild(t.c);
     }
 
