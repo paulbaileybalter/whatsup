@@ -618,7 +618,7 @@
   // A category is picked by the first rule that matches the text (or the row's label).
   const CATEGORIES = [
     ['Stop work',   /stop(ped)?[\s-]*(work|production|the line)|work stoppage|critical repair|stop production/i],
-    ['Bad batch',   /bad batch|dump(ed|ing)?\b|dumped|tipped|down the drain|out of spec|off[\s-]?spec|oos\b|failed (micro|qa|qc|test|spec)|micro (fail|issue|positive)|contaminat|infect|spoil|off[\s-]?flavour|diacetyl|re-?work|re-?process|downgrad|write[\s-]?off|blocked stock|\bhold\b|on hold|quarantin|recall/i],
+    ['Bad batch',   /bad batch|growth|not (yet )?(released|cleared|passed)|(pending|awaiting) (release|result)|dump(ed|ing)?\b|dumped|tipped|down the drain|out of spec|off[\s-]?spec|oos\b|failed (micro|qa|qc|test|spec)|micro (fail|issue|positive)|contaminat|infect|spoil|off[\s-]?flavour|diacetyl|re-?work|re-?process|downgrad|write[\s-]?off|blocked stock|\bhold\b|on hold|quarantin|recall/i],
     ['Shutdown',    /shut[\s-]?down|shutting down|plant (down|offline)|line (is )?down|offline|out of (service|action)|power (outage|failure|loss)|outage|not running|unable to (run|brew|package|can|keg)|cancel(l)?ed (run|brew|pack)/i],
     ['Loss',        /\bloss(es)?\b|lost\b|waste|wasted|spill|leak(s|ed|ing)?|yield|rejects?|scrap|shortage|shortfall|out of stock|stock[\s-]?out|under[\s-]?fill|over[\s-]?fill|beer lost|litres? lost|\bhl lost|\bL lost/i],
     ['Breakdown',   /break[\s-]?down|broke(n)?\b|fault|failed|failure|jam(med)?|blown|burst|seized|not working|faulty|repair|damaged|malfunction|trip(ped)?\b|alarm|slow (tx|transfer)|downtime|down time|stuck/i],
@@ -653,6 +653,7 @@
   // "All good", "running well", "no issues"... are not KPI events
   const POSITIVE = /\b(plates? (?:are |is )?(?:all )?clear(?:ed)?(?: today)?|all clear|clear today|(?:now |been |all )?released?(?: today| to (?:market|packaging|trade))?|released and (?:packaged|packing)|passed|passed (?:micro|qc|qa|physchem|sensory)|all (?:in )?spec|in spec|approved|cleared for (?:release|packaging)|all good|all fine|all ok|all okay|all normal|all running|running (?:well|smoothly|fine|normally|ok|okay)|runs? (?:well|smoothly)|looking (?:good|great|fine|ok|okay)|looks (?:good|great|fine|ok|okay)|going (?:well|smoothly|great)|went (?:well|smoothly)|good to go|operating (?:normally|well|fine)|working (?:well|fine|great)|performing (?:well|fine)|on (?:track|schedule|plan)|as (?:planned|scheduled|expected)|no (?:drama|dramas)|nothing to report|smooth(?:ly)?|fine|great|good|normal|ok|okay)\b/i;
   const NEG_PROBLEM = /\b(no|nil|zero|without|nothing)\s+(?:\w+\s+){0,2}(?:issues?|problems?|faults?|breakdowns?|incidents?|concerns?|delays?|complaints?|stoppages?|downtime|losses|leaks?|dramas?)\b/gi;
+  const VAGUE = /\b(few|lots?|plenty|bunch|several|a number|heaps?) (?:\w+ ){0,2}(?:to|of|on|left)\b|get(?:ting)? through|catch(?:ing)? up|keeping up|business as usual|as usual|ticking along|chipping away|working through/i;
   function kpiRelevant(team, label, text, rag, ntk) {
     if (!text || TRIVIAL.test(text) || NEGATED.test(text) || NOISE.test(text)) return false;
     {
@@ -670,9 +671,12 @@
       // other areas: only serious events (stop work, bad batch, shutdown, loss, breakdown, safety incident) or a red flag
       return rag === 'red' || STRONG.includes(cat);
     }
-    if (rag === 'red' || rag === 'amber') return true;
-    if (FLAG_LABELS.some(re => re.test(label || ''))) return true;
-    return CATEGORIES.some(([, re]) => re.test(text));
+    // an entry needs context: a problem keyword, or (for a flagged row) a proper sentence — bare tags like "BBT 2 HAZY" are left out
+    const words = text.split(/\s+/).length;
+    if (VAGUE.test(text) && !CATEGORIES.slice(0, 5).some(([, re]) => re.test(text))) return false;   // "few to get through", "lots on", "business as usual"
+    if (CATEGORIES.some(([, re]) => re.test(text))) return true;
+    if ((rag === 'red' || rag === 'amber') && words >= 5) return true;
+    return false;
   }
 
   // ---------------- Reading the month from the sheet ----------------
@@ -692,7 +696,7 @@
   }
   async function harvest(force) {
     st = loadState(); busy = {}; errors = {}; editing = null; drafts = {}; catFilter = 'All';
-    const key = 'kpi_harvest_v4_' + ym;
+    const key = 'kpi_harvest_v6_' + ym;
     if (!force && ym < nowYm()) { // past months rarely change, so reuse what we read last time
       try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && Array.isArray(c.events)) { events = c.events; dayInfo = c.dayInfo || []; loading = false; render(); return; } } catch (e) {}
     }

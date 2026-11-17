@@ -335,14 +335,16 @@ async function handleNewsletter(request, env) {
 
 // ---------------- Monthly KPI AI (/api/kpi) ----------------
 // Works from the month's handover mentions that may have affected KPIs (losses, shutdowns, stop work, bad batches...).
+const SPECIFIC = 'Name the actual incidents. Each sentence covers one incident or a group of repeats of the same one, giving the date(s), area, the equipment, tank, batch or product involved, and the duration, volume or other figure exactly as stated in the mentions (for example: "On 5 Oct the Brewhouse was down 6 hours after a wort pump failure, delaying a brew"). Cover the most serious incidents first and every stop-work, shutdown, dumped or held batch and loss. Never write generic category statements such as "equipment faults occurred" or "issues impacted various KPIs"; never describe how teams responded or what was prevented unless a mention says so; never speculate about causes or KPI impact that is not stated.';
+
 const KPI_SYSTEM = [
   "You help the Balter Brewing (Gold Coast, Australia) production planning team prepare the monthly KPI review.",
   "You are given every mention from the month's daily handovers that may have impacted a KPI: losses, shutdowns, stop-work issues, bad or dumped batches, breakdowns, quality failures, safety incidents, delays and similar. Each has a date, the team it came from, a category and the text.",
   "Use only facts stated in the mentions. Never invent numbers, volumes, causes, names or outcomes. If a quantity is not stated, do not give one. Australian English, plain factual tone.",
   AREA_NAMING,
   'Reply with JSON only, in exactly this shape: {"summary":"...","keyPoints":[{"date":"12 Oct","text":"..."}]}.',
-  '"summary" is ONE short paragraph of 50 to 80 words, plain prose, no bullets, headings or markdown. Strictly factual and concise: state what happened, in which area, and how often it repeated. No adjectives of opinion (significant, major, unfortunately), no filler, no scene-setting, no praise, no recommendations. Do not mention things that were running well.',
-  '"keyPoints" is 5 to 12 of the most significant events in date order. Each "text" is one short sentence (under 30 words) that says what happened and its likely KPI impact as stated. "date" is the day it happened or started, written like "12 Oct" (use the date in the mention). Merge repeats of the same issue into one point using its first date.',
+  '"summary" is ONE paragraph of 70 to 120 words, plain prose, no bullets, headings or markdown. Strictly factual, no adjectives of opinion (significant, major, unfortunately), no filler, no scene-setting, no praise, no recommendations. Do not mention things that were running well.', SPECIFIC,
+  '"keyPoints" is 5 to 12 of the most significant events in date order. Each "text" is one specific sentence (under 35 words) naming the equipment, tank, batch or product and any duration or volume stated, plus the KPI impact only if stated. "date" is the day it happened or started, written like "12 Oct" (use the date in the mention). Merge repeats of the same issue into one point using its first date.',
 ].join(' ');
 
 const KPI_SUMMARY_SYSTEM = [
@@ -351,7 +353,7 @@ const KPI_SUMMARY_SYSTEM = [
   "Write the summary from the key points only: cover every point on the list and nothing that is not on it, and give the points higher up the list more prominence and earlier placement. The detail mentions may be used only to add facts about a listed point, never to add other events.",
   "Never invent numbers, volumes, causes, names or outcomes. Australian English.",
   AREA_NAMING,
-  'Reply with JSON only: {"summary":"..."}. The summary is ONE short paragraph of 50 to 80 words, plain prose, no bullets, headings or markdown. Strictly factual and concise: what happened, in which area, how often. No adjectives of opinion, no filler, no praise, no recommendations.',
+  'Reply with JSON only: {"summary":"..."}. The summary is ONE paragraph of 70 to 120 words, plain prose, no bullets, headings or markdown. Strictly factual, no adjectives of opinion, no filler, no praise, no recommendations.', SPECIFIC,
 ].join(' ');
 
 async function handleKpi(request, env) {
