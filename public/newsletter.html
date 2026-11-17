@@ -804,7 +804,7 @@
     topbar.appendChild(brand);
     const nav = el('div', 'topbar-nav');
     topbar.appendChild(nav);
-    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})(), 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter']].forEach(([t, h, k]) => {
+    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + (function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})(), 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter'], ['Monthly KPI', '/kpi.html', 'kpi']].forEach(([t, h, k]) => {
       const a = document.createElement('a'); a.href = h; a.className = 'btn ghost weekly-btn' + (k === 'newsletter' ? ' current' : ''); a.textContent = t; nav.appendChild(a);
     });
     const pill = el('div', 'date-pill');

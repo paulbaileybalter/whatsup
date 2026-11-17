@@ -1165,7 +1165,7 @@ function parseLbb(XLSX, data) {
 
     const nav = el('div', 'topbar-nav');
     topbar.appendChild(nav);
-    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + toYmd(endDate), 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter']].forEach(([t, h, k]) => {
+    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + toYmd(endDate), 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter'], ['Monthly KPI', '/kpi.html', 'kpi']].forEach(([t, h, k]) => {
       const a = document.createElement('a'); a.href = h; a.className = 'btn ghost weekly-btn' + (k === 'weekly' ? ' current' : ''); a.textContent = t; nav.appendChild(a);
     });
 

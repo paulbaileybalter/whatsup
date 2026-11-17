@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balter Brewing — Monthly KPI</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="shortcut icon" href="/assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#47D7AC">
+<link rel="preload" href="/fonts/lexend-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body>
+<div class="bubbles" id="bubbles" aria-hidden="true"></div>
+<div id="app"></div>
+<script src="/bubbles.js?v=20261116a"></script>
+
+<style>
+  #app, #app * { box-sizing: border-box; }
+  #app {
+    --mint: #47D7AC; --mint-ink: #0d6a4d; --apricot: #FDAA63; --purple: #7566A0;
+    --sky: #99D6EA; --gold: #FFD637; --pale: #F1EB9C; --indigo: #8C93D8;
+    --leaf: #8BC48A; --coral: #F2937D; --violet: #B295D1; --slate: #6C7A89;
+    --red: #e56659; --red-10: #fdeceb;
+
+    --safety: var(--mint); --qc: var(--purple); --brew: var(--sky); --packaging: var(--apricot);
+    --maintenance: var(--gold); --logistics: var(--indigo); --engineering: var(--leaf);
+    --customer: var(--coral); --planning: var(--violet); --people: var(--slate); --wins: var(--pale);
+
+    --ink: #14161a; --ink-soft: #55585F; --muted: #9a9da3; --paper: #FBFBF9; --canvas: #ffffff;
+    --line: rgba(0,0,0,.10); --line-soft: rgba(0,0,0,.06);
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px;
+    --shadow-card: 0 1px 2px rgba(20,22,26,.04), 0 8px 24px -12px rgba(20,22,26,.10);
+    --shadow-pop: 0 12px 32px -8px rgba(20,22,26,.22);
+    --font-display: 'Space Grotesk', ui-sans-serif, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, sans-serif;
+    --font-data: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    font-family: var(--font-body);
+    color: var(--ink); background: var(--canvas); padding: 18px; max-width: 1400px; margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  .frame { background: transparent; padding: 0; }
+  .topbar {
+    display: grid; grid-template-columns: auto auto auto auto; justify-content: space-between; align-items: center; gap: 16px;
+    margin-bottom: 18px; background: var(--canvas); border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg); padding: 12px 20px; box-shadow: var(--shadow-card);
+  }
+  .date-pill { justify-self: center; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; font-family: var(--font-display); }
+  .date-pill .ico { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1.5px solid var(--line); cursor: pointer; font-family: inherit; padding: 0; flex: 0 0 auto; transform: rotate(-3deg); }
+  .date-pill .ico:hover { background: #F7F7F7; }
+  .refresh-icon-btn { border: 1.5px solid var(--line); background: #fff; padding: 0; cursor: pointer; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .refresh-icon-btn img { width: 20px; height: 20px; display: block; }
+  .refresh-icon-btn:disabled { opacity: .5; cursor: default; }
+  .refresh-icon-btn:hover:not(:disabled) { background: #F7F7F7; }
+  .brand { display: flex; align-items: center; gap: 10px; justify-self: start; }
+  .brand__mark { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand__logo { width: 34px; height: 34px; }
+  .brand__text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand__title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); white-space: nowrap; }
+  .brand__sub { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); font-family: var(--font-body); margin-top: 2px; }
+  .lti-pill { justify-self: end; display: flex; align-items: center; gap: 10px; border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 18px; background: var(--paper); }
+  .weekly-btn { justify-self: center; text-decoration: none; white-space: nowrap; padding: 9px 16px; font-size: 12.5px; }
+  .topbar-nav { flex: 1; display: flex; align-items: center; justify-content: space-evenly; gap: 10px; flex-wrap: wrap; }
+  .btn.weekly-btn.current { background: var(--ink); color: #fff; border-color: var(--ink); pointer-events: none; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; justify-self: end; }
+  .gmail-icon-btn { width: 34px; height: 34px; border-radius: 10px; background: transparent; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .12s ease, border-color .12s ease; }
+  .gmail-icon-btn:hover { background: rgba(0,0,0,.04); border-color: var(--ink); }
+  .lti-pill .num { font-size: 20px; font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+  .lti-pill .lbl { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: .04em; text-transform: uppercase; }
+
+  .section-label { font-weight: 700; font-size: 12px; letter-spacing: .06em; color: var(--ink-soft); margin: 22px 2px 10px; text-transform: uppercase; font-family: var(--font-body); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .card {
+    border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas);
+    border: 1px solid var(--line-soft); box-shadow: var(--shadow-card);
+    border-left: 4px solid var(--card-accent, var(--mint));
+    display: flex; flex-direction: column;
+  }
+  .card-head { color: var(--ink); font-weight: 700; font-size: 12.5px; padding: 12px 14px 10px; display: flex; align-items: center; gap: 9px; font-family: var(--font-display); }
+  .card-head .tabicon { flex-shrink: 0; width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; transform: rotate(-3deg); background: var(--card-accent, var(--mint)); }
+  .card-head .owner { font-weight: 600; opacity: .8; font-size: 10.5px; margin-left: auto; white-space: nowrap; font-family: var(--font-body); text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); }
+  .kpi-rows { padding: 2px 14px 12px; }
+  .kpi-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
+  .kpi-row:last-child { border-bottom: none; }
+  .kpi-row .lbl { color: var(--ink-soft); }
+  .kpi-row .val { font-weight: 700; color: var(--ink); font-family: var(--font-data); }
+
+  .owner-grid { display: grid; gap: 12px; margin-bottom: 4px; }
+  .owner-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .owner-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+  .bullets { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+  .bullet { display: flex; gap: 8px; align-items: flex-start; }
+  .bullet .rag { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: 0 0 auto; background: var(--line); }
+  .bullet .rag.green { background: var(--mint-ink); }
+  .bullet .rag.amber { background: #b8860b; }
+  .bullet .rag.red { background: var(--red); }
+  .bullet .btext { font-size: 12.5px; line-height: 1.4; }
+  .bullet .blabel { font-weight: 700; color: var(--ink); }
+  .bullet .bval { color: var(--ink-soft); }
+  .bullet .bval.empty { color: var(--muted); font-style: italic; }
+
+  .wins-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--pale); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card { border-radius: var(--radius-lg); overflow: hidden; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--slate); box-shadow: var(--shadow-card); margin-top: 4px; }
+  .ntk-card .card-head .tabicon { background: var(--slate); }
+  .ntk-body { padding: 4px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .ntk-line { font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); }
+  .ntk-section { display: inline-block; background: var(--slate); color: #fff; font-size: 10px; font-weight: 700; border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: middle; font-family: var(--font-body); }
+  .ntk-label { font-weight: 700; color: var(--ink); }
+  .ntk-value { color: var(--ink-soft); }
+  .wins-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; padding: 4px 16px 16px; }
+  .win-line { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; font-size: 12.5px; }
+  .win-line .star { color: #b8860b; font-size: 13px; margin-top: 1px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .btn {
+    appearance: none; border: none; cursor: pointer; border-radius: 999px; padding: 10px 18px;
+    font-family: var(--font-body); font-weight: 600; font-size: 13.5px; display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .12s ease, background .12s ease, border-color .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--ink); color: #fff; }
+  .btn.primary:hover { background: #26282d; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.ghost:hover { background: rgba(0,0,0,.04); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .status { font-size: 12px; color: var(--ink-soft); margin-left: auto; font-weight: 600; }
+  .synced-note { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+  .banner { border-radius: var(--radius-md); padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .banner.warn { background: #fffaea; color: #8a6a00; border-color: rgba(255,214,55,.55); }
+  .banner.error { background: var(--red-10); color: #a8362a; border-color: rgba(229,102,89,.35); }
+  .banner button { margin-left: auto; }
+
+  .wk-btn { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 4px 10px; cursor: pointer; color: var(--ink); }
+  .wk-btn:hover:not(:disabled) { background: rgba(0,0,0,.04); }
+  .wk-btn:disabled { opacity: .5; cursor: default; }
+  .wk-link { border: none; background: none; padding: 0; margin: 6px 0 0; display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; color: var(--mint-ink); cursor: pointer; text-decoration: underline; }
+  .wk-summary .wk-link { margin-top: 8px; }
+  .wk-body > .wk-link { margin-top: 10px; }
+  .wk-summary .wk-link { display: inline-block; }
+  .ai-tag.edited { background: var(--apricot); }
+  .wk-stale { margin-top: 6px; font-size: 11.5px; color: #9a5b12; }
+  .wk-edit { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font-family: var(--font-body); font-size: 13px; line-height: 1.5; resize: vertical; background: #fff; }
+  .wk-edit:focus { outline: none; border-color: var(--mint); }
+  .wk-edit-row { display: flex; gap: 8px; margin-top: 8px; }
+  .wk-point { grid-template-columns: 74px 1fr 22px !important; }
+  .wk-x { border: none; background: none; color: var(--muted); font-size: 12px; cursor: pointer; width: 22px; height: 22px; border-radius: 6px; padding: 0; opacity: .5; }
+  .wk-point:hover .wk-x { opacity: 1; }
+  .wk-x:hover { background: #fdeceb; color: #c4473b; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); }
+  .empty-state .big { font-size: 40px; margin-bottom: 10px; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(15,16,18,.55); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: var(--canvas); border-radius: var(--radius-lg); max-width: 640px; width: 100%; max-height: 84vh; overflow-y: auto; padding: 22px 26px; box-shadow: var(--shadow-pop); }
+  .modal h2 { margin: 0 0 4px; font-size: 19px; font-family: var(--font-display); }
+  .modal .sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .close-x { float: right; border: none; background: transparent; color: var(--ink-soft); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 20px; line-height: 1; }
+  .close-x:hover { background: rgba(0,0,0,.05); }
+
+  #toastMsg {
+    font-family: var(--font-body); position: fixed; left: 50%; bottom: 26px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px;
+    font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow-pop);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+    z-index: 100; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  #toastMsg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toastMsg::before { content: "✓"; color: var(--mint); font-weight: 800; }
+
+  @media (max-width: 1000px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  .btn, .lti-pill { white-space: nowrap; }
+  @media (max-width: 1180px) { .topbar { flex-wrap: wrap; } .topbar-nav { flex-basis: 100%; } }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .owner-grid.g3, .owner-grid.g4 { grid-template-columns: 1fr; }
+    .wins-cols { grid-template-columns: 1fr; }
+    .topbar { grid-template-columns: 1fr; text-align: center; }
+    .topbar { flex-direction: column; }
+    .topbar-right { justify-self: center; flex-wrap: wrap; justify-content: center; }
+    .brand { justify-self: center; }
+    .date-pill { justify-self: center; }
+  }
+  .date-input { border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 8px; font-family: var(--font-body); font-size: 13px; background: #fff; color: var(--ink); }
+  .day-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; }
+  .day-chip { background: var(--paper); border: 1px solid var(--line-soft); border-radius: var(--radius-md); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+  .day-chip b { font-family: var(--font-display); font-size: 12.5px; }
+  .day-chip span { color: var(--ink-soft); font-family: var(--font-data); font-size: 11px; }
+  .day-chip.missing { opacity: .55; border-style: dashed; }
+  .ai-status { font-size: 12.5px; color: var(--ink-soft); margin: 0 2px 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--mint); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .weekly-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+  .wk-card { background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--accent); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }
+  .wk-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; }
+  .wk-ico { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 13px; transform: rotate(-3deg); }
+  .wk-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; flex: 1; }
+  .wk-count { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+  .wk-body { padding: 0 16px 14px; }
+  .wk-summary { background: #F6FBF9; border: 1px solid rgba(71,215,172,.35); border-radius: var(--radius-md); padding: 10px 12px; font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+  .wk-summary.pending { color: var(--muted); font-style: italic; }
+  .ai-tag { display: inline-block; background: var(--mint); color: var(--ink); font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 5px; padding: 1px 6px; margin-right: 8px; }
+  .wk-point { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line-soft); font-size: 12.5px; line-height: 1.45; }
+  .wk-day { font-family: var(--font-data); font-size: 11px; font-weight: 600; color: var(--ink-soft); padding-top: 1px; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--ink-soft); font-size: 14px; }
+  .empty-state .big { font-size: 34px; margin-bottom: 8px; }
+  @media (max-width: 1000px) { .day-strip { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 800px) { .weekly-grid { grid-template-columns: 1fr; } }
+  .prod-card { display: flex; gap: 28px; align-items: center; background: var(--canvas); border: 1px solid var(--line-soft); border-left: 4px solid var(--mint); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 26px; margin-bottom: 14px; }
+  .prod-tank { flex: 0 0 auto; width: 190px; }
+  .prod-tank svg { width: 100%; height: auto; display: block; }
+  .prod-info { flex: 1; min-width: 0; }
+  .prod-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .prod-pct { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1.05; color: var(--ink); margin: 4px 0 2px; }
+  .prod-pct small { font-size: 22px; color: var(--mint-ink); margin-left: 2px; }
+  .prod-line { font-family: var(--font-data); font-size: 13px; color: var(--ink-soft); }
+  .prod-line b { color: var(--ink); }
+  .prod-msg { margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--mint-ink); min-height: 18px; }
+  .prod-fields { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  .prod-fields .prod-field { margin-top: 0; flex: 1 1 200px; }
+  .prod-field { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
+  .prod-field label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .prod-input-wrap { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; padding: 0 12px; }
+  .prod-input-wrap:focus-within { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(71,215,172,.25); }
+  .prod-input-wrap input { border: none; outline: none; flex: 1; min-width: 0; padding: 10px 0; font-family: var(--font-data); font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
+  .prod-input-wrap span { font-family: var(--font-data); font-size: 13px; color: var(--muted); }
+  .prod-updated { font-size: 11.5px; color: var(--muted); }
+  .wave-a { animation: waveMove 5s linear infinite; }
+  .wave-b { animation: waveMove 8s linear infinite reverse; }
+  @keyframes waveMove { to { transform: translateX(-60px); } }
+  .liquid { transition: transform 1s cubic-bezier(.4,.1,.2,1); }
+  @media (prefers-reduced-motion: reduce) { .wave-a, .wave-b { animation: none; } .liquid { transition: none; } }
+  @media (max-width: 600px) { .prod-card { flex-direction: column; text-align: center; } .prod-field { margin-left: auto; margin-right: auto; } }
+
+  .nl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+  .nl-grid .span2 { grid-column: 1 / -1; }
+  .btn.sm { padding: 7px 14px; font-size: 12px; }
+  .cand { border: 1px solid var(--line-soft); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; background: var(--paper); }
+  .cand-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 14px; }
+  .cand-top span { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+  .cand-why { font-size: 13px; line-height: 1.45; margin: 4px 0 6px; }
+  .cand ul { margin: 0 0 8px; padding-left: 18px; font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+  .topic { border-top: 1px solid var(--line-soft); padding: 10px 0; }
+  .topic-top { display: flex; align-items: flex-start; gap: 10px; }
+  .topic-top input[type=checkbox] { margin-top: 4px; width: 16px; height: 16px; accent-color: #47D7AC; flex: 0 0 auto; }
+  .topic-label { flex: 1; font-size: 13.5px; cursor: pointer; }
+  .topic-blurb { font-size: 12.5px; color: var(--ink-soft); font-weight: 400; margin-top: 2px; line-height: 1.4; }
+  .topic-acts { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+  .topic .wk-summary { margin: 8px 0 0 26px; }
+  .item-label { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-soft); }
+  .item-head { font-family: var(--font-display); font-weight: 700; font-size: 15px; margin: 2px 0 4px; }
+  .plain-input { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; font-family: var(--font-body); font-size: 13px; background: #fff; }
+  .plain-input:focus { outline: none; border-color: var(--mint); }
+  .topic-add { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+  .export-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+  .ntk-err { margin-top: 8px; font-size: 12px; color: #a32a2a; }
+  details.src { margin-top: 14px; font-size: 13px; }
+  details.src summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
+  .src-list { margin-top: 8px; }
+  .src-list .wk-point { grid-template-columns: 110px 1fr 0 !important; }
+  .nl-grid .wk-summary .wk-link { display: block; }
+  @media (max-width: 800px) { .nl-grid { grid-template-columns: 1fr; } }
+
+  .kpi-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .kpi-chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; font-family: var(--font-body); font-size: 11.5px; font-weight: 600; padding: 5px 11px; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+  .kpi-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .kpi-chip span { color: var(--muted); font-weight: 500; }
+  .kpi-chip.on { background: #000; border-color: #000; color: #fff; }
+  .kpi-chip.on span { color: #bbb; }
+  .kpi-day { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--purple); margin: 16px 0 6px; }
+  .kpi-ev { position: relative; border: 1px solid var(--line-soft); border-left: 4px solid var(--cat, #c9c6ba); border-radius: var(--radius-md); padding: 9px 78px 9px 12px; margin-bottom: 7px; background: #fff; }
+  .kpi-ev.off { opacity: .45; }
+  .kpi-ev.off .kpi-ev-text { text-decoration: line-through; }
+  .kpi-ev-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 3px; }
+  .kpi-cat { background: var(--cat); color: #000; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-radius: 5px; padding: 1px 6px; }
+  .kpi-lab { color: var(--muted); font-size: 11px; }
+  .kpi-when { color: var(--ink-soft); font-size: 11px; margin-left: auto; }
+  .kpi-rag { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-radius: 5px; padding: 1px 6px; }
+  .kpi-rag.red { background: #fdeceb; color: #c4473b; } .kpi-rag.amber { background: #fff3e4; color: #b86a12; } .kpi-rag.green { background: #e8f8f2; color: #1E9C78; } .kpi-rag.ntk { background: #efecf6; color: #7566A0; }
+  .kpi-ev-text { font-size: 13px; line-height: 1.5; }
+  .kpi-x { position: absolute; top: 8px; right: 8px; width: auto !important; padding: 0 6px !important; font-size: 11px !important; opacity: .55; font-family: var(--font-body); font-weight: 600; }
+  .kpi-ev:hover .kpi-x { opacity: 1; }
+  .wk-point.kp { grid-template-columns: 74px 1fr auto !important; }
+  .kp-acts { display: inline-flex; gap: 2px; opacity: .5; } .wk-point.kp:hover .kp-acts { opacity: 1; }
+  .kp-edit { padding: 8px 0; border-top: 1px solid var(--line-soft); display: grid; gap: 6px; }
+  .kp-date-in { max-width: 160px; }
+</style>
+<link rel="stylesheet" href="/theme.css?v=20261116a">
+<script>
+(function () {
+  const KPI_SECTIONS = [
+    { key: 'safety', icon: '🦺', title: 'SAFETY', color: 'var(--safety)',
+      metrics: [['ltifr','LTIFR #'], ['nearmiss','Near Miss'], ['safetyconv','Safety Conversation'], ['housekeeping','House Keeping Score']] },
+    { key: 'qc', icon: '🧪', title: 'QC - MONTHLY KPI', color: 'var(--qc)',
+      metrics: [['micro','Micro %'], ['gmp','GMP %'], ['physchem','PhysChem %'], ['sensory','Sensory']] },
+    { key: 'brew', icon: '🍺', title: 'BREW & CELLAR', color: 'var(--brew)',
+      metrics: [['krones','Brewhouse Krones'], ['dme','Brewhouse DME'], ['ferm','Fermentation'], ['bbt','BBT']] },
+    { key: 'packaging', icon: '🥫', title: 'PACKAGING', color: 'var(--packaging)',
+      metrics: [['cartons','Cartons'], ['kegs','Kegs'], ['changeovers','Change Overs'], ['me','Last week ME']] },
+    { key: 'maintenance', icon: '🔧', title: 'MAINTENANCE', color: 'var(--maintenance)',
+      metrics: [['openwo','Open WO'], ['wpwo','WIP WO'], ['breakdowns','Weekly Breakdowns'], ['completed','Weekly Completed WO']] },
+    { key: 'logistics_cs', icon: '🚚', title: 'LOGISTICS & C-SERVICE', color: 'var(--logistics)',
+      metrics: [['soldlts','Sold Lts'], ['complaints','Customer Complaints'], ['keg','Keg'], ['carton','Carton']] },
+  ];
+
+  const OWNER_GROUPS = [
+    { cols: 3, sections: [
+      { key: 'safety_o', icon: '🦺', title: 'Safety', defaultOwner: 'Manny', color: 'var(--safety)', bullets: [
+        "Any incidents or near-misses from the previous day",
+        "Focused safety reminders or safety share",
+        "Time since last Lost Time Incident (LTI) on site",
+        "General information" ] },
+      { key: 'qc_o', icon: '🧪', title: 'QC', defaultOwner: 'Patrick', color: 'var(--qc)', bullets: [
+        "Current Blocked Stock",
+        "Status of any hold or flagged products BA",
+        "Status of any release BA",
+        "Issues from the previous day's testing or inspections",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'brew_o', icon: '🍺', title: 'Brew & Cellar', defaultOwner: 'Flash', color: 'var(--brew)', bullets: [
+        "Brewing schedule and key priorities (e.g., start times for batches, transfers)",
+        "Physchem KPI's (Out of spec Brewhouse Gravitys and pH for last 24hrs)",
+        "Equipment maintenance or downtime impacting brewing (Slow Tx speeds, Brewhouse delays)",
+        "Tank space or fermentation challenges",
+        "CIP in spec and available to transfer into",
+        "Staffing issues",
+        "General information / Temporary checking yeast collection Odor YES or NO" ] },
+    ]},
+    { cols: 4, sections: [
+      { key: 'packaging_o', icon: '🥫', title: 'Packaging', defaultOwner: 'Razor', color: 'var(--packaging)', bullets: [
+        "Overview of packaging runs: canning",
+        "Overview of packaging runs: kegs",
+        "Changeovers planned for the day",
+        "Equipment issues or maintenance planned",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'engineering_o', icon: '📐', title: 'Engineering', defaultOwner: 'Mark', color: 'var(--engineering)', bullets: [
+        "Project and contractor update",
+        "Plant Efficiency Improvements",
+        "General information" ] },
+      { key: 'maintenance_o', icon: '🔧', title: 'Maintenance', defaultOwner: 'Camo', color: 'var(--maintenance)', bullets: [
+        "Plant Equipment status",
+        "Critical repairs - Stop Production",
+        "Preventative tasks for the day",
+        "Staffing issues",
+        "General information" ] },
+      { key: 'logistics_o', icon: '🚚', title: 'Logistics', defaultOwner: 'Jules', color: 'var(--logistics)', bullets: [
+        "Deliveries/pickups",
+        "Stock updates or inventory concerns",
+        "Equipment availability",
+        "Safety Concerns",
+        "Staffing issues",
+        "General information" ] },
+    ]},
+    { cols: 3, sections: [
+      { key: 'customer_o', icon: '🎧', title: 'Customer Service', defaultOwner: 'Grace', color: 'var(--customer)', bullets: [
+        "Updates on customer orders",
+        "Issues impacting timelines",
+        "Customer complaints",
+        "General information" ] },
+      { key: 'planning_o', icon: '📊', title: 'Planning Updates', defaultOwner: 'Paul', color: 'var(--planning)', bullets: [
+        "Overview of today's production schedule: brewing, cellaring, packaging",
+        "Any changes or delays impacting production or deliveries",
+        "Updates on materials or resources (e.g., raw ingredients, cans, bottles)",
+        "General information" ] },
+      { key: 'people_o', icon: '👥', title: 'People', defaultOwner: 'Lara', color: 'var(--people)', bullets: [
+        "Company updates", "", "", "", "" ] },
+    ]},
+  ];
+
+  const WINS_COUNT = 8; // 4 left, 4 right
+
+  // ---------------- Sheet layout map ----------------
+  const SHEET_ID = '1VFv36ypj0DO2vQ2aKCDpiwsBjAsKzaKcxlz7y3I5WAw';
+  const CACHE_KEY = 'last_sheet_sync'; // single shared key: cached copy of the last good sync, for resilience only
+
+  // ---------------- CSV / sheet fetching ----------------
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\r') { /* skip */ }
+        else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+        else field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+
+  function tabNameCandidates(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const dNoPad = String(date.getDate());
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const mNoPad = String(date.getMonth() + 1);
+    const yy = String(date.getFullYear()).slice(-2);
+    const yyyy = String(date.getFullYear());
+    return [...new Set([
+      `${d}/${m}/${yy}`, `${d}/${m}`, `${d}/${m}/${yyyy}`, `${dNoPad}/${mNoPad}/${yy}`, `${dNoPad}/${mNoPad}`,
+    ])];
+  }
+
+  async function fetchTabCSV(tabName) {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!text || text.length < 20 || /^<(!doctype|html)/i.test(text.trim())) return null;
+    if (!/safety/i.test(text.slice(0, 400))) return null;
+    return parseCSV(text);
+  }
+
+  function fetchTabJSONP(tabName) {
+    return new Promise((resolve, reject) => {
+      const cbName = '__gsheet_cb_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      let settled = false;
+      const cleanup = () => { delete window[cbName]; script.remove(); };
+      window[cbName] = data => {
+        if (settled) return;
+        settled = true;
+        try {
+          const table = data && data.table;
+          if (!table || !table.rows) { resolve(null); return; }
+          const rows = table.rows.map(r => (r.c || []).map(cell => {
+            if (!cell) return '';
+            if (cell.f !== undefined && cell.f !== null) return String(cell.f);
+            if (cell.v !== undefined && cell.v !== null) return String(cell.v);
+            return '';
+          }));
+          // Google's JSON output can strip N header rows into table.cols instead of leaving them in table.rows
+          // (parsedNumHeaders), which silently shifts every row number up relative to the CSV export. Put
+          // reconstructed header row(s) back so row numbering matches the sheet again.
+          const headerCount = table.parsedNumHeaders || 0;
+          for (let i = 0; i < headerCount; i++) {
+            rows.unshift((table.cols || []).map(c => (c && c.label) || ''));
+          }
+          resolve(rows);
+        } catch (e) { resolve(null); }
+        cleanup();
+      };
+      script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tabName)}&tqx=out:json;responseHandler:${cbName}`;
+      script.onerror = () => { if (!settled) { settled = true; reject(new Error('JSONP load failed')); cleanup(); } };
+      document.body.appendChild(script);
+      setTimeout(() => { if (!settled) { settled = true; reject(new Error('JSONP timeout')); cleanup(); } }, 8000);
+    });
+  }
+
+  async function fetchTabRows(tabName) {
+    try { const v = await fetchTabCSV(tabName); if (v) return v; } catch (e) { /* fall through */ }
+    try { const v = await fetchTabJSONP(tabName); if (v && v.length) return v; } catch (e) { /* both failed */ }
+    return null;
+  }
+
+  function ragClass(raw) {
+    const t = (raw || '').toLowerCase();
+    if (/on\s*track/.test(t)) return 'green';
+    if (/at\s*risk/.test(t)) return 'amber';
+    if (/off\s*track|behind|delayed|not\s*on\s*track/.test(t)) return 'red';
+    if (/red|🔴/.test(t)) return 'red';
+    if (/amber|orange|yellow|🟡|🟠/.test(t)) return 'amber';
+    if (/green|🟢/.test(t)) return 'green';
+    return '';
+  }
+
+  function normLabel(s) {
+    return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function labelsMatch(cellText, knownLabel) {
+    const a = normLabel(cellText), b = normLabel(knownLabel);
+    if (!a || !b) return false;
+    const anchor = b.slice(0, Math.min(14, b.length)); // first ~14 normalized chars is plenty distinctive per label
+    return a.includes(anchor);
+  }
+
+  // Builds a fresh, self-contained display object straight from parsed sheet rows — no merging with prior state.
+  // Rows are located by matching each field's known label text rather than trusting fixed row numbers, since the
+  // live export's row alignment has proven to drift from what a static template inspection would suggest.
+  function buildDisplayState(rows, tabName) {
+    const cell = (r, c) => (rows[r - 1] && rows[r - 1][c] !== undefined ? String(rows[r - 1][c]).trim() : '');
+    const findRow = (labelCol, label, fromRow, toRow) => {
+      for (let r = fromRow; r <= toRow; r++) {
+        if (labelsMatch(cell(r, labelCol), label)) return r;
+      }
+      return null;
+    };
+
+    // ---- KPI: each metric's row is wherever its label actually is, searched within its section's label column ----
+    const kpi = {};
+    KPI_SECTIONS.forEach((sec, i) => {
+      const labelCol = i * 2, valueCol = labelCol + 1;
+      let searchFrom = 2;
+      kpi[sec.key] = sec.metrics.map(([key, label]) => {
+        const row = findRow(labelCol, label, searchFrom, searchFrom + 8) || searchFrom;
+        searchFrom = row + 1;
+        return { key, label, value: cell(row, valueCol) };
+      });
+    });
+
+    // ---- Owner blocks: find each section's header row (RAG Status column header), then bullets in sequence ----
+    const OWNER_COL = 0, LABEL_COL = 1, RAG_COL = 6, COMMENT_COL = 7, LAST_COL = 11;
+    const readComment = row => {
+      const parts = [];
+      for (let c = COMMENT_COL; c <= LAST_COL; c++) {
+        const v = cell(row, c);
+        if (v) parts.push(v);
+      }
+      return parts.join(' ');
+    };
+    const isChecked = raw => /^(true|1|yes|✓|checked)$/i.test((raw || '').trim());
+    const owner = {};
+    const needToKnow = [];
+    let cursor = 6; // KPI grid ends around here; first owner header should appear shortly after
+    let safetyLtiValue = '';
+    OWNER_GROUPS.flatMap(g => g.sections).forEach(sec => {
+      let headerRow = null;
+      for (let r = cursor; r <= cursor + 12; r++) {
+        if (normLabel(cell(r, RAG_COL)).includes('rag')) { headerRow = r; break; }
+      }
+      // Need to Know is a checkbox column added after Comments — locate it from this section's own
+      // header row so it's found regardless of exactly which column it landed in.
+      let ntkCol = 12;
+      if (headerRow) {
+        for (let c = LAST_COL + 1; c <= LAST_COL + 6; c++) {
+          if (normLabel(cell(headerRow, c)).includes('need to know')) { ntkCol = c; break; }
+        }
+      }
+      let rowCursor = (headerRow || cursor) + 1;
+      const ownerName = cell(rowCursor, OWNER_COL) || sec.defaultOwner;
+      const bullets = sec.bullets.map(label => {
+        // A blank label means a freeform row with no fixed prompt (e.g. People's extra entries) —
+        // there's no text to search for, so just take the next row in sequence.
+        const row = label ? (findRow(LABEL_COL, label, rowCursor, rowCursor + 10) || rowCursor) : rowCursor;
+        rowCursor = row + 1;
+        const value = readComment(row);
+        if (sec.key === 'safety_o' && /lti/i.test(label)) safetyLtiValue = value;
+        if (value && isChecked(cell(row, ntkCol))) {
+          needToKnow.push({ section: sec.title, label: label || sec.title, value });
+        }
+        return { label, value, rag: ragClass(cell(row, RAG_COL)) };
+      });
+      owner[sec.key] = { ownerName, bullets };
+      cursor = rowCursor;
+    });
+
+    let ltiDays = null;
+    const ltiMatch = safetyLtiValue.match(/(\d+)\s*Days?\s*LTI\s*Free/i);
+    if (ltiMatch) ltiDays = parseInt(ltiMatch[1], 10);
+
+    // ---- Wins: find the "Wins" header, then read the following rows as free-text entries ----
+    let winsHeaderRow = null;
+    for (let r = cursor; r <= cursor + 10; r++) {
+      if (normLabel(cell(r, 0)).includes('wins') || normLabel(cell(r, 1)).includes('wins')) { winsHeaderRow = r; break; }
+    }
+    const winsStart = (winsHeaderRow || cursor) + 1;
+    const winCell = r => cell(r, 1) || cell(r, 0); // win text lives in column B, like every other free-text row
+    const winsLeft = [], winsRight = [];
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsLeft.push(winCell(winsStart + i));
+    for (let i = 0; i < WINS_COUNT / 2; i++) winsRight.push(winCell(winsStart + WINS_COUNT / 2 + i));
+
+    return { tabName, kpi, owner, ltiDays, winsLeft, winsRight, needToKnow, syncedAt: new Date().toISOString() };
+  }
+
+
+  // ================= Monthly KPI =================
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MON3 = MONTHS.map(m => m.slice(0, 3));
+  const pad2 = n => String(n).padStart(2, '0');
+  const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+  const monthLabel = ym => MONTHS[parseInt(ym.slice(5), 10) - 1] + ' ' + ym.slice(0, 4);
+  const nowYm = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); };
+  const app = document.getElementById('app');
+
+  // Default to the previous calendar month; ?month=YYYY-MM or the picker chooses any other
+  let ym = (function () {
+    const q = new URLSearchParams(location.search).get('month');
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(q || '')) return q;
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+  })();
+
+  let events = [];          // every KPI-relevant mention for the month, deduplicated
+  let dayInfo = [];
+  let loading = false, progress = '';
+  let st = emptyState();    // saved AI output + edits, per month
+  let busy = {}, errors = {};
+  let editing = null, drafts = {};
+  let catFilter = 'All';
+
+  function emptyState() { return { summary: null, keyPoints: [], excluded: [] }; }
+  const stKey = () => 'kpi_state_v1_' + ym;
+  function loadState() { try { const x = JSON.parse(localStorage.getItem(stKey()) || 'null'); if (x && Array.isArray(x.keyPoints)) return Object.assign(emptyState(), x); } catch (e) {} return emptyState(); }
+  function saveState() { try { localStorage.setItem(stKey(), JSON.stringify(st)); } catch (e) {} }
+
+  // ---------------- What counts as a KPI-relevant mention ----------------
+  // A category is picked by the first rule that matches the text (or the row's label).
+  const CATEGORIES = [
+    ['Stop work',   /stop(ped)?[\s-]*(work|production|the line)|work stoppage|critical repair|stop production/i],
+    ['Bad batch',   /bad batch|dump(ed|ing)?\b|dumped|tipped|down the drain|out of spec|off[\s-]?spec|oos\b|failed (micro|qa|qc|test|spec)|micro (fail|issue|positive)|contaminat|infect|spoil|off[\s-]?flavour|diacetyl|re-?work|re-?process|downgrad|write[\s-]?off|blocked stock|\bhold\b|on hold|quarantin|recall/i],
+    ['Shutdown',    /shut[\s-]?down|shutting down|plant (down|offline)|line (is )?down|offline|out of (service|action)|power (outage|failure|loss)|outage|not running|unable to (run|brew|package|can|keg)|cancel(l)?ed (run|brew|pack)/i],
+    ['Loss',        /\bloss(es)?\b|lost\b|waste|wasted|spill|leak(s|ed|ing)?|shrink|yield|rejects?|scrap|short(age|fall)?|out of stock|stock[\s-]?out|under[\s-]?fill|over[\s-]?fill|beer lost|litres? lost|\bhl lost|\bL lost/i],
+    ['Breakdown',   /break[\s-]?down|broke(n)?\b|fault|failed|failure|jam(med)?|blown|burst|seized|not working|faulty|repair|damaged|malfunction|trip(ped)?\b|alarm|slow (tx|transfer)|downtime|down time|stuck/i],
+    ['Safety',      /injur|incident|near[\s-]?miss|lti\b(?!\s*free)|first aid|medical|hazard|spill|evacuat|unsafe|stop[\s-]?work authority/i],
+    ['Delay',       /delay(ed|s)?|late\b|behind|postpone|pushed back|reschedul|bumped|waiting (on|for)|missed|backlog|constraint|no (cans|kegs|bottles|ingredient|labels)|supplier|out of (cans|kegs|labels|hops|malt|co2)/i],
+    ['Complaint',   /complaint|customer (issue|concern)|returned|return(s)?\b|refund|credit note/i],
+  ];
+  // Rows that exist to flag problems: anything written in them (other than "nil") is worth a look
+  const FLAG_LABELS = [
+    /critical repairs/i, /current blocked stock/i, /status of any hold/i, /equipment maintenance or downtime/i,
+    /any changes or delays/i, /issues impacting timelines/i, /customer complaints/i, /any incidents or near/i,
+    /issues from the previous day/i, /physchem kpi/i, /equipment issues or maintenance/i, /tank space or fermentation/i,
+  ];
+  const TRIVIAL = /^\s*(no|nil|none|n\/?a|nothing|ok|okay|nope|na|all good|good|normal|as planned|as per plan|same|-+|\.+|tbc|tba|0)\s*[.!]*\s*$/i;
+  const NEGATED = /^\s*(no|nil|none|nothing|not any|zero)\b[^,;]{0,40}$/i;   // "No issues", "Nil to report", "None today"
+  const NOISE = /days?\s*lti\s*free|^general information$/i;
+
+  function categorise(label, text) {
+    const hay = text;
+    for (const [name, re] of CATEGORIES) if (re.test(hay)) return name;
+    for (const [name, re] of CATEGORIES) if (re.test(label || '')) return name;
+    return 'Other';
+  }
+  function kpiRelevant(label, text, rag, ntk) {
+    if (!text || TRIVIAL.test(text) || NEGATED.test(text) || NOISE.test(text)) return false;
+    if (rag === 'red' || rag === 'amber') return true;
+    if (FLAG_LABELS.some(re => re.test(label || ''))) return true;
+    if (ntk && CATEGORIES.some(([, re]) => re.test(text))) return true;
+    return CATEGORIES.some(([, re]) => re.test(text));
+  }
+
+  // ---------------- Reading the month from the sheet ----------------
+  function fmtWhen(days) {
+    const sorted = [...days].sort((a, b) => a - b), mon = MON3[parseInt(ym.slice(5), 10) - 1];
+    if (sorted.length === 1) return `${sorted[0]} ${mon}`;
+    const consecutive = sorted.every((d, i) => i === 0 || d === sorted[i - 1] + 1);
+    if (consecutive) return `${sorted[0]}–${sorted[sorted.length - 1]} ${mon} (${sorted.length} days)`;
+    return `${sorted.join(', ')} ${mon}`;
+  }
+  async function fetchDay(date) {
+    for (const name of tabNameCandidates(date)) {
+      const rows = await fetchTabRows(name);
+      if (rows) return buildDisplayState(rows, name);
+    }
+    return null;
+  }
+  async function harvest(force) {
+    st = loadState(); busy = {}; errors = {}; editing = null; drafts = {}; catFilter = 'All';
+    const key = 'kpi_harvest_v1_' + ym;
+    if (!force && ym < nowYm()) { // past months rarely change, so reuse what we read last time
+      try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && Array.isArray(c.events)) { events = c.events; dayInfo = c.dayInfo || []; loading = false; render(); return; } } catch (e) {}
+    }
+    loading = true; events = []; dayInfo = [];
+    const y = parseInt(ym.slice(0, 4), 10), m = parseInt(ym.slice(5), 10) - 1;
+    const last = new Date(y, m + 1, 0).getDate(), today = new Date();
+    const days = [];
+    for (let d = 1; d <= last; d++) { const dt = new Date(y, m, d); if (dt <= today) days.push(dt); }
+    const results = new Array(days.length);
+    let next = 0, done = 0;
+    progress = `Reading the handovers… 0 of ${days.length} days`; render();
+    async function worker() {
+      while (next < days.length) {
+        const i = next++;
+        try { results[i] = await fetchDay(days[i]); } catch (e) { results[i] = null; }
+        done++; progress = `Reading the handovers… ${done} of ${days.length} days`; render();
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]);
+    const map = new Map();
+    const secTitle = {}; OWNER_GROUPS.flatMap(g => g.sections).forEach(s => { secTitle[s.key] = s.title; });
+    results.forEach((r, i) => {
+      if (!r) return;
+      const day = days[i].getDate();
+      const ntkSet = new Set((r.needToKnow || []).map(n => normLabel(n.value)));
+      OWNER_GROUPS.flatMap(g => g.sections).forEach(sec => {
+        const o = r.owner[sec.key]; if (!o) return;
+        o.bullets.forEach(b => {
+          const text = (b.value || '').replace(/\s+/g, ' ').trim();
+          if (!kpiRelevant(b.label, text, b.rag, ntkSet.has(normLabel(text)))) return;
+          const k = sec.key + '|' + normLabel(text);
+          if (!map.has(k)) map.set(k, { team: areaName(sec.title), label: b.label || '', text, rag: b.rag || '', category: categorise(b.label, text), days: [], ntk: false });
+          const e = map.get(k);
+          if (!e.days.includes(day)) e.days.push(day);
+          if (ntkSet.has(normLabel(text))) e.ntk = true;
+          if (b.rag === 'red' || (b.rag === 'amber' && e.rag !== 'red')) e.rag = b.rag;
+        });
+      });
+    });
+    events = [...map.values()].map(e => {
+      e.days.sort((a, b) => a - b);
+      return { id: e.team + '|' + e.days[0] + '|' + normLabel(e.text).slice(0, 40), team: e.team, label: e.label, text: e.text, rag: e.rag, ntk: e.ntk, category: e.category, first: e.days[0], days: e.days, when: fmtWhen(e.days) };
+    }).sort((a, b) => a.first - b.first || a.team.localeCompare(b.team));
+    dayInfo = days.map((d, i) => ({ day: d.getDate(), found: !!results[i] }));
+    try { localStorage.setItem(key, JSON.stringify({ events, dayInfo })); } catch (e) {}
+    loading = false; progress = ''; render();
+  }
+  function areaName(t) {
+    const x = String(t || '').toLowerCase();
+    if (x === 'qc') return 'QC';
+    if (x.startsWith('brew')) return 'Brew Team';
+    if (x === 'packaging') return 'Pack Team';
+    if (x === 'planning updates') return 'Planning';
+    if (x === 'people') return 'HR';
+    return t;
+  }
+
+  const activeEvents = () => events.filter(e => !st.excluded.includes(e.id));
+
+  // ---------------- AI ----------------
+  async function kpiCall() {
+    const list = activeEvents().map(e => ({ date: e.when.replace(/ \(\d+ days\)$/, ''), team: e.team, category: e.category, text: e.text }));
+    const res = await fetch('/api/kpi', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ month: monthLabel(ym), events: list }),
+    });
+    if (res.redirected || res.status === 401) { location.href = '/login'; throw new Error('Signed out'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    return data.data;
+  }
+  async function generate() {
+    if (busy.ai) return;
+    if ((st.summary && st.summary.edited) && !confirm('This will replace your edited summary and key points. Continue?')) return;
+    busy.ai = true; delete errors.ai; render();
+    try {
+      const d = await kpiCall();
+      st.summary = { text: d.summary, edited: false };
+      st.keyPoints = d.keyPoints.map(k => ({ id: 'k' + Math.random().toString(36).slice(2, 8), date: k.date, text: k.text }));
+      saveState();
+    } catch (e) { errors.ai = e.message || 'unknown error'; }
+    delete busy.ai; render();
+  }
+
+  // ---------------- Rendering ----------------
+  let toastTimer;
+  function showToast(msg) {
+    let t = document.getElementById('toastMsg');
+    if (!t) { t = document.createElement('div'); t.id = 'toastMsg'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3600);
+  }
+  function btn(label, cls, onClick, disabled) {
+    const b = el('button', cls, label); b.type = 'button'; b.disabled = !!disabled;
+    b.addEventListener('click', onClick); return b;
+  }
+  function card(title, icon, accent) {
+    const c = el('div', 'wk-card'); c.style.setProperty('--accent', accent);
+    const head = el('div', 'wk-head', `<span class="wk-ico">${icon}</span><span class="wk-title">${escHtml(title)}</span>`);
+    c.appendChild(head);
+    const body = el('div', 'wk-body'); c.appendChild(body);
+    return { c, head, body };
+  }
+  const errLine = key => errors[key] ? el('div', 'ntk-err', `⚠️ ${escHtml(errors[key])}`) : null;
+  const CAT_COLOURS = { 'Stop work': '#E56659', 'Bad batch': '#7566A0', 'Shutdown': '#E56659', 'Loss': '#FDAA63', 'Breakdown': '#E8B923', 'Safety': '#47D7AC', 'Delay': '#99D6EA', 'Complaint': '#9aa0a6', 'Other': '#c9c6ba' };
+
+  function plainText() {
+    const lines = [`MONTHLY KPI — ${monthLabel(ym)}`, ''];
+    if (st.summary) lines.push(st.summary.text, '');
+    if (st.keyPoints.length) { lines.push('KEY POINTS'); st.keyPoints.forEach(k => lines.push(`• ${k.date}: ${k.text}`)); lines.push(''); }
+    lines.push('EVENTS');
+    activeEvents().forEach(e => lines.push(`${e.when} · ${e.team} · ${e.category}: ${e.text}`));
+    return lines.join('\n');
+  }
+  async function copyAll() {
+    try { await navigator.clipboard.writeText(plainText()); showToast('Copied the summary, key points and events'); }
+    catch (e) { showToast('Could not copy — your browser blocked it'); }
+  }
+
+  function render() {
+    const active = document.activeElement, activeId = active && active.id, caret = active && active.selectionStart;
+    app.innerHTML = '';
+    const frame = el('div', 'frame'); app.appendChild(frame);
+
+    // ---- top bar ----
+    const topbar = el('div', 'topbar');
+    const brand = el('div', 'brand');
+    brand.innerHTML = `<div class="brand__mark"><svg viewBox="0 0 161 161" class="brand__logo" xmlns="http://www.w3.org/2000/svg"><path fill="#47D7AC" d="M136.3,70.4l-9.4-9.4c-1.6-1.6-4.3-1.6-6,0-1.6,1.6-1.6,4.3,0,6l2.3,2.3c-9.6,13.2-25.2,21.7-42.7,21.7s-33.1-8.6-42.7-21.8l2.3-2.3c1.6-1.6,1.6-4.3,0-6-1.6-1.6-4.3-1.6-6,0l-9.4,9.4c-1.6,1.6-1.6,4.3,0,6,.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2l1.1-1.1c11.2,14.7,28.9,24.2,48.7,24.2s37.5-9.5,48.7-24.2l1.1,1.1c.8.8,1.9,1.2,3,1.2s2.2-.4,3-1.2c1.6-1.6,1.6-4.3,0-6"/><path fill="#47D7AC" d="M152.5,8.5v144H8.5V8.5h144M161,0H0v161h161V0h0Z"/></svg></div><div class="brand__text"><span class="brand__title">Monthly KPI</span><span class="brand__sub">Balter Brewing</span></div>`;
+    topbar.appendChild(brand);
+    const nav = el('div', 'topbar-nav');
+    topbar.appendChild(nav);
+    const today = (function(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());})();
+    [['Daily 9AM', '/', 'daily'], ['Weekly Ops', '/weekly.html?date=' + today, 'weekly'], ['Newsletter', '/newsletter.html', 'newsletter'], ['Monthly KPI', '/kpi.html', 'kpi']].forEach(([t, h, k]) => {
+      const a = document.createElement('a'); a.href = h; a.className = 'btn ghost weekly-btn' + (k === 'kpi' ? ' current' : ''); a.textContent = t; nav.appendChild(a);
+    });
+    const pill = el('div', 'date-pill');
+    const picker = document.createElement('input'); picker.type = 'month'; picker.value = ym; picker.max = nowYm(); picker.className = 'date-input'; picker.title = 'Choose a month';
+    picker.addEventListener('change', () => { if (/^\d{4}-\d{2}$/.test(picker.value)) { ym = picker.value; history.replaceState(null, '', '?month=' + ym); harvest(false); } });
+    pill.appendChild(picker);
+    nav.appendChild(pill);
+    const lo = document.createElement('a'); lo.href = '/logout'; lo.className = 'btn ghost'; lo.style.cssText = 'padding:8px 14px;font-size:12px;text-decoration:none;'; lo.textContent = 'Log out';
+    nav.appendChild(lo);
+    frame.appendChild(topbar);
+
+    if (loading) { frame.appendChild(el('div', 'empty-state', `<div class="big">📋</div><div>${escHtml(progress || 'Loading…')}</div>`)); return; }
+
+    const found = dayInfo.filter(d => d.found).length;
+    const act = activeEvents();
+    const status = el('div', 'ai-status', `<b>${escHtml(monthLabel(ym))}</b> &nbsp;·&nbsp; ${found} of ${dayInfo.length} days had a handover &nbsp;·&nbsp; ${act.length} mention${act.length === 1 ? '' : 's'} that may have affected KPIs${events.length !== act.length ? ` (${events.length - act.length} removed)` : ''}`);
+    const rr = btn('↻ Re-read the sheet', 'wk-btn', () => harvest(true)); rr.style.marginLeft = 'auto'; status.appendChild(rr);
+    frame.appendChild(status);
+    if (!events.length) {
+      frame.appendChild(el('div', 'empty-state', `<div class="big">✅</div><div>No mentions that look like they affected KPIs were found for ${escHtml(monthLabel(ym))}.</div>`));
+      return;
+    }
+
+    // ---- 1. Summary ----
+    {
+      const t = card('Summary — what affected the month\'s KPIs', '📉', 'var(--mint)');
+      t.head.appendChild(btn(busy.ai ? '…' : (st.summary ? '↻ Redo' : 'Write summary'), 'wk-btn', generate, busy.ai || !act.length));
+      if (st.summary && !busy.ai) t.head.appendChild(btn('Copy all', 'wk-btn', copyAll));
+      if (busy.ai) t.body.appendChild(el('div', 'wk-summary pending', 'Reading every mention and summarising…'));
+      else if (!st.summary) t.body.appendChild(el('div', 'wk-summary pending', `The AI reads the ${act.length} mentions below and writes a short summary and a key points list. You can edit all of it.`));
+      else {
+        const box = el('div', 'wk-summary');
+        if (editing === 'summary') {
+          const ta = document.createElement('textarea'); ta.className = 'wk-edit'; ta.id = 'ed_summary'; ta.rows = 8; ta.value = drafts.summary != null ? drafts.summary : st.summary.text;
+          ta.addEventListener('input', () => { drafts.summary = ta.value; });
+          box.appendChild(ta);
+          const row = el('div', 'wk-edit-row');
+          row.appendChild(btn('Save', 'btn primary sm', () => { const v = (drafts.summary != null ? drafts.summary : st.summary.text).trim(); if (v) { st.summary.text = v; st.summary.edited = true; } delete drafts.summary; editing = null; saveState(); render(); }));
+          row.appendChild(btn('Cancel', 'btn ghost sm', () => { delete drafts.summary; editing = null; render(); }));
+          box.appendChild(row);
+        } else {
+          box.innerHTML = `<span class="ai-tag${st.summary.edited ? ' edited' : ''}">${st.summary.edited ? 'Edited' : 'AI summary'}</span>${escHtml(st.summary.text).replace(/\n+/g, '<br><br>')}`;
+          const edit = el('button', 'wk-link', 'Edit'); edit.type = 'button';
+          edit.addEventListener('click', () => { editing = 'summary'; drafts.summary = st.summary.text; render(); });
+          box.appendChild(edit);
+        }
+        t.body.appendChild(box);
+      }
+      const e = errLine('ai'); if (e) t.body.appendChild(e);
+      frame.appendChild(t.c);
+    }
+
+    // ---- 2. Key points with dates ----
+    if (st.keyPoints.length) {
+      const t = card('Key points', '📌', 'var(--apricot)');
+      st.keyPoints.forEach(k => {
+        if (editing === 'kp:' + k.id) {
+          const row = el('div', 'kp-edit');
+          const di = document.createElement('input'); di.type = 'text'; di.id = 'kpd_' + k.id; di.className = 'plain-input kp-date-in'; di.value = k.date;
+          const ti = document.createElement('textarea'); ti.id = 'kpt_' + k.id; ti.className = 'wk-edit'; ti.rows = 2; ti.value = k.text;
+          row.appendChild(di); row.appendChild(ti);
+          const r2 = el('div', 'wk-edit-row');
+          r2.appendChild(btn('Save', 'btn primary sm', () => { k.date = di.value.trim(); k.text = ti.value.trim() || k.text; if (st.summary) st.summary.edited = true; editing = null; saveState(); render(); }));
+          r2.appendChild(btn('Cancel', 'btn ghost sm', () => { editing = null; render(); }));
+          row.appendChild(r2); t.body.appendChild(row);
+          return;
+        }
+        const row = el('div', 'wk-point kp');
+        row.innerHTML = `<span class="wk-day">${escHtml(k.date)}</span><span class="wk-text">${escHtml(k.text)}</span>`;
+        const acts = el('span', 'kp-acts');
+        acts.appendChild(btn('✎', 'wk-x', () => { editing = 'kp:' + k.id; render(); }));
+        acts.appendChild(btn('✕', 'wk-x', () => { st.keyPoints = st.keyPoints.filter(x => x.id !== k.id); saveState(); render(); }));
+        row.appendChild(acts);
+        t.body.appendChild(row);
+      });
+      const add = btn('+ Add a key point', 'wk-btn', () => { const id = 'k' + Math.random().toString(36).slice(2, 8); st.keyPoints.push({ id, date: '', text: 'New key point' }); editing = 'kp:' + id; saveState(); render(); });
+      add.style.marginTop = '10px'; t.body.appendChild(add);
+      frame.appendChild(t.c);
+    }
+
+    // ---- 3. Chronological events ----
+    {
+      const t = card('Every mention that may have affected KPIs — in date order', '🗓️', 'var(--sky)');
+      const cats = ['All', ...CATEGORIES.map(c => c[0]), 'Other'].filter(c => c === 'All' || events.some(e => e.category === c));
+      const chips = el('div', 'kpi-chips');
+      cats.forEach(c => {
+        const n = c === 'All' ? events.length : events.filter(e => e.category === c).length;
+        const b = el('button', 'kpi-chip' + (catFilter === c ? ' on' : ''), `${c === 'All' ? '' : `<i style="background:${CAT_COLOURS[c]}"></i>`}${escHtml(c)} <span>${n}</span>`); b.type = 'button';
+        b.addEventListener('click', () => { catFilter = c; render(); });
+        chips.appendChild(b);
+      });
+      t.body.appendChild(chips);
+      t.body.appendChild(el('div', 'prod-updated', 'Remove anything that did not really affect a KPI — removed items are left out of the AI summary next time you press Redo.'));
+      let lastDay = null;
+      events.filter(e => catFilter === 'All' || e.category === catFilter).forEach(e => {
+        if (e.first !== lastDay) { lastDay = e.first; t.body.appendChild(el('div', 'kpi-day', escHtml(`${e.first} ${MONTHS[parseInt(ym.slice(5), 10) - 1]}`))); }
+        const off = st.excluded.includes(e.id);
+        const row = el('div', 'kpi-ev' + (off ? ' off' : ''));
+        row.style.setProperty('--cat', CAT_COLOURS[e.category] || '#c9c6ba');
+        row.innerHTML = `<div class="kpi-ev-top"><span class="kpi-cat">${escHtml(e.category)}</span><b>${escHtml(e.team)}</b>${e.label ? `<span class="kpi-lab">${escHtml(e.label.length > 60 ? e.label.slice(0, 58) + '…' : e.label)}</span>` : ''}${e.rag ? `<span class="kpi-rag ${e.rag}">${e.rag}</span>` : ''}${e.ntk ? '<span class="kpi-rag ntk">Need to know</span>' : ''}<span class="kpi-when">${e.days.length > 1 ? escHtml(e.when) : ''}</span></div><div class="kpi-ev-text">${escHtml(e.text)}</div>`;
+        const x = btn(off ? '↺ Put back' : '✕ Remove', 'wk-x kpi-x', () => { st.excluded = off ? st.excluded.filter(i => i !== e.id) : [...st.excluded, e.id]; saveState(); render(); });
+        row.appendChild(x);
+        t.body.appendChild(row);
+      });
+      frame.appendChild(t.c);
+    }
+
+    if (activeId) { const n = document.getElementById(activeId); if (n) { n.focus(); try { if (caret != null) n.setSelectionRange(caret, caret); } catch (e) {} } }
+  }
+
+  harvest(false);
+
+})();
+</script>
+</body>
+</html>

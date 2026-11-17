@@ -632,6 +632,12 @@
     newsletterBtn.textContent = 'Newsletter';
     nav.appendChild(newsletterBtn);
 
+    const kpiBtn = document.createElement('a');
+    kpiBtn.href = '/kpi.html';
+    kpiBtn.className = 'btn ghost weekly-btn';
+    kpiBtn.textContent = 'Monthly KPI';
+    nav.appendChild(kpiBtn);
+
     weatherFor(activeDate); // start fetching the day's weather so it is ready for the email
 
     // calendar picker + date

@@ -332,6 +332,53 @@ async function handleNewsletter(request, env) {
   }
 }
 
+
+// ---------------- Monthly KPI AI (/api/kpi) ----------------
+// Works from the month's handover mentions that may have affected KPIs (losses, shutdowns, stop work, bad batches...).
+const KPI_SYSTEM = [
+  "You help the Balter Brewing (Gold Coast, Australia) production planning team prepare the monthly KPI review.",
+  "You are given every mention from the month's daily handovers that may have impacted a KPI: losses, shutdowns, stop-work issues, bad or dumped batches, breakdowns, quality failures, safety incidents, delays and similar. Each has a date, the team it came from, a category and the text.",
+  "Use only facts stated in the mentions. Never invent numbers, volumes, causes, names or outcomes. If a quantity is not stated, do not give one. Australian English, plain factual tone.",
+  AREA_NAMING,
+  'Reply with JSON only, in exactly this shape: {"summary":"...","keyPoints":[{"date":"12 Oct","text":"..."}]}.',
+  '"summary" is one or two short paragraphs, 90 to 150 words in total, plain prose with no bullets, headings or markdown: what most affected the month\'s KPIs, which areas it came from, and anything that repeated. Mention a date only when it helps.',
+  '"keyPoints" is 5 to 12 of the most significant events in date order. Each "text" is one short sentence (under 30 words) that says what happened and its likely KPI impact as stated. "date" is the day it happened or started, written like "12 Oct" (use the date in the mention). Merge repeats of the same issue into one point using its first date.',
+].join(' ');
+
+async function handleKpi(request, env) {
+  const json = (obj, status) => new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  if (request.method !== 'POST') return json({ error: 'POST only' }, 405);
+  if (!env.AI && !env.ANTHROPIC_API_KEY) return json({ error: 'No AI provider configured on the Worker' }, 501);
+  const raw = await request.text();
+  if (raw.length > 160000) return json({ error: 'Request too large' }, 413);
+  let body;
+  try { body = JSON.parse(raw); } catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  const events = (Array.isArray(body.events) ? body.events : []).slice(0, 300).map(e => ({
+    date: String((e && e.date) || '').slice(0, 40),
+    team: String((e && e.team) || '').slice(0, 40),
+    category: String((e && e.category) || '').slice(0, 30),
+    text: String((e && e.text) || '').slice(0, 600),
+  })).filter(e => e.text);
+  if (!events.length) return json({ error: 'No events to work from' }, 400);
+  const month = String(body.month || '').slice(0, 40);
+  const list = events.map(e => `- [${[e.date, e.team, e.category].filter(Boolean).join(' · ')}] ${e.text}`).join('\n');
+  const prompt = `Month: ${month}\nMentions (${events.length}):\n${list}`;
+  try {
+    let text = await callLLM(env, KPI_SYSTEM, prompt, 1800);
+    let data = extractJson(text);
+    if (!data) {
+      text = await callLLM(env, KPI_SYSTEM + ' Reply with valid JSON only, no other text.', prompt, 1800);
+      data = extractJson(text);
+    }
+    if (!data || typeof data.summary !== 'string') return json({ error: 'The AI reply could not be read - please try again' }, 502);
+    const keyPoints = (Array.isArray(data.keyPoints) ? data.keyPoints : []).slice(0, 15)
+      .map(k => ({ date: String((k && k.date) || '').slice(0, 20), text: String((k && k.text) || '').slice(0, 400) })).filter(k => k.text);
+    return json({ data: { summary: data.summary.trim(), keyPoints } });
+  } catch (e) {
+    return json({ error: e.message || 'AI request failed' }, 502);
+  }
+}
+
 // ---------------- Worker ----------------
 
 export default {
@@ -381,6 +428,7 @@ export default {
     // Authenticated
     if (url.pathname === '/api/summarize') return handleSummarize(request, env);
     if (url.pathname === '/api/newsletter') return handleNewsletter(request, env);
+    if (url.pathname === '/api/kpi') return handleKpi(request, env);
 
     // Serve the static site
     return env.ASSETS.fetch(request);
