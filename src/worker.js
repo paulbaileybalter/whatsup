@@ -341,8 +341,17 @@ const KPI_SYSTEM = [
   "Use only facts stated in the mentions. Never invent numbers, volumes, causes, names or outcomes. If a quantity is not stated, do not give one. Australian English, plain factual tone.",
   AREA_NAMING,
   'Reply with JSON only, in exactly this shape: {"summary":"...","keyPoints":[{"date":"12 Oct","text":"..."}]}.',
-  '"summary" is one or two short paragraphs, 90 to 150 words in total, plain prose with no bullets, headings or markdown: what most affected the month\'s KPIs, which areas it came from, and anything that repeated. Mention a date only when it helps.',
+  '"summary" is ONE short paragraph of 50 to 80 words, plain prose, no bullets, headings or markdown. Strictly factual and concise: state what happened, in which area, and how often it repeated. No adjectives of opinion (significant, major, unfortunately), no filler, no scene-setting, no praise, no recommendations. Do not mention things that were running well.',
   '"keyPoints" is 5 to 12 of the most significant events in date order. Each "text" is one short sentence (under 30 words) that says what happened and its likely KPI impact as stated. "date" is the day it happened or started, written like "12 Oct" (use the date in the mention). Merge repeats of the same issue into one point using its first date.',
+].join(' ');
+
+const KPI_SUMMARY_SYSTEM = [
+  "You help the Balter Brewing (Gold Coast, Australia) production planning team prepare the monthly KPI review.",
+  "You are given the reviewer's own ordered list of key points for the month (most important first), and optionally the underlying handover mentions for detail.",
+  "Write the summary from the key points only: cover every point on the list and nothing that is not on it, and give the points higher up the list more prominence and earlier placement. The detail mentions may be used only to add facts about a listed point, never to add other events.",
+  "Never invent numbers, volumes, causes, names or outcomes. Australian English.",
+  AREA_NAMING,
+  'Reply with JSON only: {"summary":"..."}. The summary is ONE short paragraph of 50 to 80 words, plain prose, no bullets, headings or markdown. Strictly factual and concise: what happened, in which area, how often. No adjectives of opinion, no filler, no praise, no recommendations.',
 ].join(' ');
 
 async function handleKpi(request, env) {
@@ -353,6 +362,19 @@ async function handleKpi(request, env) {
   if (raw.length > 160000) return json({ error: 'Request too large' }, 413);
   let body;
   try { body = JSON.parse(raw); } catch (e) { return json({ error: 'Invalid JSON' }, 400); }
+  if (body.mode === 'summary') {
+    const kps = (Array.isArray(body.keyPoints) ? body.keyPoints : []).slice(0, 20).map(k => ({ date: String((k && k.date) || '').slice(0, 20), text: String((k && k.text) || '').slice(0, 400) })).filter(k => k.text);
+    if (!kps.length) return json({ error: 'No key points to work from' }, 400);
+    const ev = (Array.isArray(body.events) ? body.events : []).slice(0, 200).map(e => `- [${[e && e.date, e && e.team].filter(Boolean).join(' \u00b7 ')}] ${String((e && e.text) || '').slice(0, 300)}`).join('\n');
+    const prompt = `Month: ${String(body.month || '').slice(0, 40)}\nKey points, most important first:\n${kps.map((k, i) => `${i + 1}. ${k.date ? '[' + k.date + '] ' : ''}${k.text}`).join('\n')}` + (ev ? `\n\nDetail mentions (background only):\n${ev}` : '');
+    try {
+      let text = await callLLM(env, KPI_SUMMARY_SYSTEM, prompt, 700);
+      let data = extractJson(text);
+      if (!data) { text = await callLLM(env, KPI_SUMMARY_SYSTEM + ' Reply with valid JSON only, no other text.', prompt, 700); data = extractJson(text); }
+      if (!data || typeof data.summary !== 'string') return json({ error: 'The AI reply could not be read - please try again' }, 502);
+      return json({ data: { summary: data.summary.trim() } });
+    } catch (e) { return json({ error: e.message || 'AI request failed' }, 502); }
+  }
   const events = (Array.isArray(body.events) ? body.events : []).slice(0, 300).map(e => ({
     date: String((e && e.date) || '').slice(0, 40),
     team: String((e && e.team) || '').slice(0, 40),

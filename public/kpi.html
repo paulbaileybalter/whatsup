@@ -293,6 +293,7 @@
   .kpi-x { position: absolute; top: 8px; right: 8px; width: auto !important; padding: 0 6px !important; font-size: 11px !important; opacity: .55; font-family: var(--font-body); font-weight: 600; }
   .kpi-ev:hover .kpi-x { opacity: 1; }
   .wk-point.kp { grid-template-columns: 74px 1fr auto !important; }
+  .kp-hot { background: #47D7AC !important; border-color: #47D7AC !important; }
   .kp-acts { display: inline-flex; gap: 2px; opacity: .5; } .wk-point.kp:hover .kp-acts { opacity: 1; }
   .kp-edit { padding: 8px 0; border-top: 1px solid var(--line-soft); display: grid; gap: 6px; }
   .kp-date-in { max-width: 160px; }
@@ -608,7 +609,7 @@
   let catFilter = 'All';
   let viewMode = (function () { try { return localStorage.getItem('kpi_view_v1') === 'area' ? 'area' : 'date'; } catch (e) { return 'date'; } })();
 
-  function emptyState() { return { summary: null, keyPoints: [], excluded: [] }; }
+  function emptyState() { return { summary: null, keyPoints: [], excluded: [], kpDirty: false }; }
   const stKey = () => 'kpi_state_v1_' + ym;
   function loadState() { try { const x = JSON.parse(localStorage.getItem(stKey()) || 'null'); if (x && Array.isArray(x.keyPoints)) return Object.assign(emptyState(), x); } catch (e) {} return emptyState(); }
   function saveState() { try { localStorage.setItem(stKey(), JSON.stringify(st)); } catch (e) {} }
@@ -649,8 +650,15 @@
   const PEOPLE_TEXT = /\b(sick|off sick|sick leave|on leave|annual leave|leave today|away|absent|day off|rdo|holiday|not in today|out today|called in|covering|covered|cover for|covers for|fill(?:ing|ed)? in|back[\s-]?fill|swap(?:ped)? (?:shifts?|days?)|shift swap|short[\s-]?staffed|short on staff|training day|induction)\b/i;
   const BUSY_TEXT = /\b(busy|big day|huge day|heavy day|hectic|flat out|full on|full-on|lots of (?:deliveries|pick[\s-]?ups|trucks|orders)|high volume of (?:deliveries|trucks|orders)|back[\s-]?to[\s-]?back (?:deliveries|trucks))\b/i;
   const ON_ROAD_TEXT = /\b(on the road|out on the road|out on (?:a )?(?:delivery|run)|on (?:a )?(?:delivery|run)|driver(?:s)? (?:is|are|out|away|off)|truck(?:s)? (?:is|are)? ?out|delivering|out delivering|doing deliveries|interstate)\b/i;
+  // "All good", "running well", "no issues"... are not KPI events
+  const POSITIVE = /\b(all good|all fine|all ok|all okay|all normal|all running|running (?:well|smoothly|fine|normally|ok|okay)|runs? (?:well|smoothly)|looking (?:good|great|fine|ok|okay)|looks (?:good|great|fine|ok|okay)|going (?:well|smoothly|great)|went (?:well|smoothly)|good to go|operating (?:normally|well|fine)|working (?:well|fine|great)|performing (?:well|fine)|on (?:track|schedule|plan)|as (?:planned|scheduled|expected)|no (?:drama|dramas)|nothing to report|smooth(?:ly)?|fine|great|good|normal|ok|okay)\b/i;
+  const NEG_PROBLEM = /\b(no|nil|zero|without|nothing)\s+(?:\w+\s+){0,2}(?:issues?|problems?|faults?|breakdowns?|incidents?|concerns?|delays?|complaints?|stoppages?|downtime|losses|leaks?|dramas?)\b/gi;
   function kpiRelevant(team, label, text, rag, ntk) {
     if (!text || TRIVIAL.test(text) || NEGATED.test(text) || NOISE.test(text)) return false;
+    {
+      const stripped = text.replace(NEG_PROBLEM, ' ').replace(new RegExp(POSITIVE.source, 'gi'), ' ');
+      if (stripped !== text.replace(/\s+/g, ' ') && rag !== 'red' && !CATEGORIES.some(([, re]) => re.test(stripped)) && !/\b(stop|hold|dump|fail|break|down|delay|late|lost|loss|leak|fault|issue|problem)/i.test(stripped)) return false;
+    }
     if (STAFFING_LABEL.test(label || '')) return false;
     const cat = categorise(label, text);
     const strong = CATEGORIES.slice(0, 5).some(([, re]) => re.test(text));
@@ -684,7 +692,7 @@
   }
   async function harvest(force) {
     st = loadState(); busy = {}; errors = {}; editing = null; drafts = {}; catFilter = 'All';
-    const key = 'kpi_harvest_v2_' + ym;
+    const key = 'kpi_harvest_v3_' + ym;
     if (!force && ym < nowYm()) { // past months rarely change, so reuse what we read last time
       try { const c = JSON.parse(localStorage.getItem(key) || 'null'); if (c && Array.isArray(c.events)) { events = c.events; dayInfo = c.dayInfo || []; loading = false; render(); return; } } catch (e) {}
     }
@@ -764,10 +772,31 @@
       const d = await kpiCall();
       st.summary = { text: d.summary, edited: false };
       st.keyPoints = d.keyPoints.map(k => ({ id: 'k' + Math.random().toString(36).slice(2, 8), date: k.date, text: k.text }));
+      st.kpDirty = false;
       saveState();
     } catch (e) { errors.ai = e.message || 'unknown error'; }
     delete busy.ai; render();
   }
+
+  // Rewrite just the summary so it follows the (edited, reordered) key points list
+  async function redoFromPoints() {
+    if (busy.kp || !st.keyPoints.length) return;
+    if (st.summary && st.summary.edited && !confirm('This will replace your edited summary. Continue?')) return;
+    busy.kp = true; delete errors.kp; render();
+    try {
+      const res = await fetch('/api/kpi', {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'summary', month: monthLabel(ym), keyPoints: st.keyPoints.map(k => ({ date: k.date, text: k.text })),
+          events: activeEvents().map(e => ({ date: e.when.replace(/ \(\d+ days\)$/, ''), team: e.team, text: e.text })) }),
+      });
+      if (res.redirected || res.status === 401) { location.href = '/login'; throw new Error('Signed out'); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      st.summary = { text: data.data.summary, edited: false }; st.kpDirty = false; saveState();
+    } catch (e) { errors.kp = e.message || 'unknown error'; }
+    delete busy.kp; render();
+  }
+  const kpChanged = () => { st.kpDirty = true; saveState(); };
 
   // ---------------- Rendering ----------------
   let toastTimer;
@@ -847,7 +876,7 @@
       t.head.appendChild(btn(busy.ai ? '…' : (st.summary ? '↻ Redo' : 'Write summary'), 'wk-btn', generate, busy.ai || !act.length));
       if (st.summary && !busy.ai) t.head.appendChild(btn('Copy all', 'wk-btn', copyAll));
       if (busy.ai) t.body.appendChild(el('div', 'wk-summary pending', 'Reading every mention and summarising…'));
-      else if (!st.summary) t.body.appendChild(el('div', 'wk-summary pending', `The AI reads the ${act.length} mentions below and writes a short summary and a key points list. You can edit all of it.`));
+      else if (!st.summary) t.body.appendChild(el('div', 'wk-summary pending', `The AI reads the ${act.length} mentions below and writes a short factual summary and a key points list. You can edit all of it.`));
       else {
         const box = el('div', 'wk-summary');
         if (editing === 'summary') {
@@ -873,14 +902,16 @@
     // ---- 2. Key points with dates ----
     if (st.keyPoints.length) {
       const t = card('Key points', '📌', 'var(--apricot)');
-      st.keyPoints.forEach(k => {
+      t.head.appendChild(btn(busy.kp ? '…' : (st.kpDirty ? '↻ Redo summary from this list' : 'Redo summary from this list'), 'wk-btn' + (st.kpDirty ? ' kp-hot' : ''), redoFromPoints, busy.kp));
+      t.body.appendChild(el('div', 'prod-updated', 'Edit, remove, add or reorder these (most important first), then redo the summary — it will follow this list.'));
+      st.keyPoints.forEach((k, ki) => {
         if (editing === 'kp:' + k.id) {
           const row = el('div', 'kp-edit');
           const di = document.createElement('input'); di.type = 'text'; di.id = 'kpd_' + k.id; di.className = 'plain-input kp-date-in'; di.value = k.date;
           const ti = document.createElement('textarea'); ti.id = 'kpt_' + k.id; ti.className = 'wk-edit'; ti.rows = 2; ti.value = k.text;
           row.appendChild(di); row.appendChild(ti);
           const r2 = el('div', 'wk-edit-row');
-          r2.appendChild(btn('Save', 'btn primary sm', () => { k.date = di.value.trim(); k.text = ti.value.trim() || k.text; if (st.summary) st.summary.edited = true; editing = null; saveState(); render(); }));
+          r2.appendChild(btn('Save', 'btn primary sm', () => { k.date = di.value.trim(); k.text = ti.value.trim() || k.text; editing = null; kpChanged(); render(); }));
           r2.appendChild(btn('Cancel', 'btn ghost sm', () => { editing = null; render(); }));
           row.appendChild(r2); t.body.appendChild(row);
           return;
@@ -888,12 +919,14 @@
         const row = el('div', 'wk-point kp');
         row.innerHTML = `<span class="wk-day">${escHtml(k.date)}</span><span class="wk-text">${escHtml(k.text)}</span>`;
         const acts = el('span', 'kp-acts');
+        acts.appendChild(btn('▲', 'wk-x', () => { if (ki > 0) { [st.keyPoints[ki - 1], st.keyPoints[ki]] = [st.keyPoints[ki], st.keyPoints[ki - 1]]; kpChanged(); render(); } }));
+        acts.appendChild(btn('▼', 'wk-x', () => { if (ki < st.keyPoints.length - 1) { [st.keyPoints[ki + 1], st.keyPoints[ki]] = [st.keyPoints[ki], st.keyPoints[ki + 1]]; kpChanged(); render(); } }));
         acts.appendChild(btn('✎', 'wk-x', () => { editing = 'kp:' + k.id; render(); }));
-        acts.appendChild(btn('✕', 'wk-x', () => { st.keyPoints = st.keyPoints.filter(x => x.id !== k.id); saveState(); render(); }));
+        acts.appendChild(btn('✕', 'wk-x', () => { st.keyPoints = st.keyPoints.filter(x => x.id !== k.id); kpChanged(); render(); }));
         row.appendChild(acts);
         t.body.appendChild(row);
       });
-      const add = btn('+ Add a key point', 'wk-btn', () => { const id = 'k' + Math.random().toString(36).slice(2, 8); st.keyPoints.push({ id, date: '', text: 'New key point' }); editing = 'kp:' + id; saveState(); render(); });
+      const add = btn('+ Add a key point', 'wk-btn', () => { const id = 'k' + Math.random().toString(36).slice(2, 8); st.keyPoints.push({ id, date: '', text: 'New key point' }); editing = 'kp:' + id; kpChanged(); render(); });
       add.style.marginTop = '10px'; t.body.appendChild(add);
       frame.appendChild(t.c);
     }
