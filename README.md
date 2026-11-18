@@ -69,3 +69,4 @@ Routine QC/release entries ("plates all clear", "beer released", "passed micro",
 An entry now needs context to appear: a problem keyword (or, for a red/amber row, a proper sentence). Bare tags such as "BBT 2 HAZY" are left out.
 Vague comments with no detail ("few to get through", "lots on", "business as usual") are ignored (`VAGUE`).
 The AI summary (70–120 words) must name each actual incident (date, area, equipment/tank/batch, duration or volume as stated) and may not use generic category statements; see `SPECIFIC` in `src/worker.js`.
+QC - MONTHLY KPI tile now shows only Micro % and PhysChem % (edit `KPI_SECTIONS` in each page to change).
